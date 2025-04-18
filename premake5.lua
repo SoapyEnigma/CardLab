@@ -1,10 +1,10 @@
-workspace "Card Lab"
+workspace "CardLab"
     architecture "x64"
     configurations { "Debug", "Release" }
     startproject "Card Lab"
 	location "Build"
 
-project "Card Lab"
+project "CardLab"
     location "Build"
     kind "ConsoleApp"
     language "C++"
@@ -17,8 +17,12 @@ project "Card Lab"
 
     files
 	{
+	    "Source/**.cpp",
         "Source/**.h",
-        "Source/**.cpp"
+		"Vendor/imgui/**.cpp",
+		"Vendor/imgui/**.h",
+		"Vendor/imgui/misc/cpp/**.cpp",
+		"Vendor/imgui/misc/cpp/**.h"
     }
 	
 	excludes
@@ -27,8 +31,14 @@ project "Card Lab"
 		"Vendor/imgui/backends/**.h",
 		"Vendor/imgui/examples/**.cpp",
 		"Vendor/imgui/examples/**.h",
-		"Vendor/imgui/misc/**.cpp",
-		"Vendor/imgui/misc/**.h",
+		"Vendor/imgui/misc/debuggers/**.cpp",
+		"Vendor/imgui/misc/debuggers/**.h",
+		"Vendor/imgui/misc/fonts/**.cpp",
+		"Vendor/imgui/misc/fonts/**.h",
+		"Vendor/imgui/misc/freetype/**.cpp",
+		"Vendor/imgui/misc/freetype/**.h",
+		"Vendor/imgui/misc/single_file/**.cpp",
+		"Vendor/imgui/misc/single_file/**.h",
         "Vendor/SFML/examples/**.cpp",
         "Vendor/SFML/examples/**.h"
     }
@@ -36,6 +46,7 @@ project "Card Lab"
     includedirs
 	{
         "Vendor/imgui",
+		"Vendor/imgui/misc/cpp",
         "Vendor/SFML/include"
     }
 
