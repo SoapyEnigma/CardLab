@@ -398,3 +398,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+*.sln
+*.vcxproj
+*.filters
+/Vendor/imgui/examples
+/Vendor/imgui/misc
+/Vendor/imgui/backends
+/Vendor/SFML/examples
+/Vendor/SFML/lib/cmake
