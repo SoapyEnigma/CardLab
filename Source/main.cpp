@@ -59,61 +59,127 @@ enum RARITY
 
 struct Pokemon
 {
+    bool isEX = false;
+    bool hasAbility = true;
+
     std::string name = "";
-    i32 health = 0;
-    ELEMENT_TYPES type = NONE;
-    STAGES stage = BASIC;
     std::string evolvesFrom = "";
     std::string basicInfo = "";
-    bool isEX = false;
-    bool hasAbility = false;
     std::string abilityName = "";
     std::string abilityEffect = "";
-    u8 attackCount = 0;
-    i32 attackCost1 = 0;
     std::string attackName1 = "";
-    u8 attackDamage1 = 0;
     std::string attackEffect1 = "";
-    i32 attackCost2 = 0;
     std::string attackName2 = "";
-    u8 attackDamage2 = 0;
     std::string attackEffect2 = "";
-    ELEMENT_TYPES weakness = NONE;
-    i32 retreatCost = 0;
     std::string illustrator = "";
-    RARITY rarity = PROMO;
     std::string flavorText = "";
+
+    i16 health = 0;
+
+    u8 attackCount = 2;
+    i8 attackCost1 = 0;
+    u8 attackDamage1 = 0;
+    i8 attackCost2 = 0;
+    u8 attackDamage2 = 0;
+    u8 retreatCost = 0;
+
+    ELEMENT_TYPES currentType = NONE;
+    ELEMENT_TYPES currentWeakness = NONE;
+    STAGES currentStage = BASIC;
+    RARITY currentRarity = PROMO;
+
+    std::vector<std::string> typeNames =
+    {
+        "None", "Colorless", "Darkness", "Dragon", "Fighting",
+        "Fire", "Grass", "Lightning", "Metal", "Psychic", "Water"
+    };
+
+    std::vector<std::string> rarityNames =
+    {
+        "Promo", "Common", "Uncommon", "Rare", "Double Rare",
+        "Art Rare", "Super Rare", "Special Art Rare",
+        "Immersive Rare", "Crown Rare",
+        "Shiny Rare", "Double Shiny Rare"
+    };
+
+    std::vector<std::string> stageNames = { "Basic", "Stage 1", "Stage 2" };
+    std::vector<std::string> attackCountNames = { "Zero", "One", "Two" };
+
+    std::vector<u8> attack1CostType = { 0, 0, 0, 0, 0, 0 };
+    std::vector<u8> attack2CostType = { 0, 0, 0, 0, 0, 0 };
 };
 
-f32 GetDummyWidth(std::string name)
+void Combo(std::string_view name, std::vector<std::string>& vector, u8& index, ImGuiComboFlags flags = 0)
 {
-    f32 w = ImGui::CalcTextSize(name.c_str()).x;
+    if (ImGui::BeginCombo(name.data(), vector[index].c_str(), flags))
+    {
+        for (u8 n = 0; n < vector.size(); n++)
+        {
+            const bool is_selected = (index == n);
+            if (ImGui::Selectable(vector[n].c_str(), is_selected))
+                index = n;
 
-    return 100 - w < 0 ? 0 : 100 - w;
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
 }
 
-void Prefix(std::string name)
+void BeginRow(std::string_view name, f32 dummyWidth)
 {
-    ImGui::PushItemWidth(-100.0f);
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text(name.c_str());
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(GetDummyWidth(name.c_str()), 0.0f));
-    ImGui::SameLine();
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("%s", name.data());
+    ImGui::Dummy({ dummyWidth, 0 });
+    ImGui::TableSetColumnIndex(1);
+}
+
+template<typename T>
+concept SmallInt = std::integral<T> && (sizeof(T) <= sizeof(int));
+
+template<SmallInt T>
+void Row(const std::string& name, T& value, f32 dummyWidth, i32 step = 1)
+{
+    BeginRow(name, dummyWidth);
+    ImGui::InputInt(("##" + name).c_str(), &value, step);
+}
+
+void Row(const std::string& name, std::vector<std::string>& vector, u8& index, f32 dummyWidth)
+{
+    BeginRow(name, dummyWidth);
+    Combo("##" + name, vector, index);
+}
+
+void Row(const std::string& name, bool& value, f32 dummyWidth)
+{
+    BeginRow(name, dummyWidth);
+    ImGui::Checkbox(("##" + name).c_str(), &value);
+}
+
+void Row(const std::string& name, std::string& value, f32 dummyWidth)
+{
+    BeginRow(name, dummyWidth);
+    ImGui::InputText(("##" + name).c_str(), &value);
 }
 
 int main()
 {
-    ImVec2 windowSize = { 1280, 720 };
-    sf::RenderWindow window(sf::VideoMode(windowSize), "Enigma's Card Lab v0.01.250418a");
+    std::string name = "Enigma's Card Lab ";
+    std::string version = "v0.01.";
+    std::string date = "250419a";
+
+    ImVec2 windowSize = { 720, 800 };
+
+    sf::RenderWindow window(sf::VideoMode(windowSize), name + version + date);
 
     if (!ImGui::SFML::Init(window))
     {
     
     }
 
-    std::string cardName = "";
     Pokemon mon;
+    f32 rowWidth = 100.0f;
 
     ImGuiWindowFlags guiWindowflags = {};
     guiWindowflags |= ImGuiWindowFlags_NoResize;
@@ -132,173 +198,112 @@ int main()
             {
                 window.close();
             }
+
+            if (const auto* resized = event->getIf<sf::Event::Resized>())
+            {
+                sf::View view = window.getView();
+                view.setSize({ static_cast<float>(resized->size.x), static_cast<float>(resized->size.y) });
+                view.setCenter({ static_cast<float>(resized->size.x) / 2.f, static_cast<float>(resized->size.y) / 2.f });
+                window.setView(view);
+                windowSize = view.getSize();
+            }
         }
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
         // ImGui
         ImGui::SetNextWindowPos(ImVec2{ 0, 0 });
-        ImGui::SetNextWindowSize(windowSize);
+        ImGui::SetNextWindowSize({ windowSize.x / 2.0f, windowSize.y });
         if (ImGui::Begin("Settings", nullptr, guiWindowflags))
         {
-            Prefix("Name");
-            ImGui::InputText("##Name", &mon.name);
-            cardName = mon.name;
-
-            Prefix("Health");
-            ImGui::InputInt("##Health", &mon.health, 10);
-
-            if (mon.health > 300)
+            if (ImGui::BeginTable("##Table", 2, ImGuiTableFlags_SizingFixedFit))
             {
-                mon.health = 300;
-            }
+                ImGui::TableSetupColumn("##Names");
+                ImGui::TableSetupColumn("##Values", ImGuiTableColumnFlags_WidthFixed, windowSize.x / 3.0f);
 
-            if (mon.health < 0)
-            {
-                mon.health = 0;
-            }
+                Row("Name", mon.name, rowWidth);
+                Row("Type", mon.typeNames, reinterpret_cast<u8&>(mon.currentType), rowWidth);
+                Row("Stage", mon.stageNames, reinterpret_cast<u8&>(mon.currentStage), rowWidth);
+                Row("Health", mon.health, rowWidth, 10);
+                Row("Info", mon.basicInfo, rowWidth);
+                Row("Is Ex", mon.isEX, rowWidth);
 
-            //Prefix("Type");
-            //if (ImGui::Combo("##Element Type", &mon_CurrentType, typesCStrs.data(), static_cast<i32>(typesCStrs.size())))
-            //{
-            //    std::string selected = _cardTemplate.types[mon_CurrentType];
-            //}
-
-            //Prefix("Stage");
-            //if (ImGui::Combo("##Stage", &mon_CurrentStage, stagesCStrs.data(), static_cast<i32>(stagesCStrs.size())))
-            //{
-            //    std::string selected = _cardTemplate.stages[mon_CurrentStage];
-            //}
-
-            Prefix("Info");
-            ImGui::InputText("##Info", &mon.basicInfo);
-
-            Prefix("Has Ability?");
-            ImGui::Checkbox("##Has Ability?", &mon.hasAbility);
-
-            Prefix("Is Ex?");
-            ImGui::Checkbox("##Is Ex?", &mon.isEX);
-
-            if (mon.hasAbility)
-            {
-                Prefix("Ability Name");
-                ImGui::InputText("##Ability Name", &mon.abilityName);
-
-                Prefix("Ability Effect");
-                ImGui::InputText("##Ability Effect", &mon.abilityEffect);
-            }
-
-            //Prefix("Attack Count");
-            //if (ImGui::Combo("##Attack Count", &mon_CurrentAttackCount, attackCountCStrs.data(), static_cast<i32>(attackCountCStrs.size())))
-            //{
-            //    std::string selected = _cardTemplate.attackCounts[mon_CurrentAttackCount];
-            //}
-
-            i32 mon_CurrentAttackCount = 2;
-
-            if (mon_CurrentAttackCount >= 1)
-            {
-                Prefix("Attack 1 Cost");
-                ImGui::InputInt("##Attack 1 Cost", &mon.attackCost1);
-
-                if (mon.attackCost1 > 6 || mon.attackCost1 < 0)
+                Row("Has Ability", mon.hasAbility, rowWidth);
+                if (mon.hasAbility)
                 {
+                    Row("Ability Name", mon.abilityName, rowWidth);
+                    Row("Ability Effect", mon.abilityEffect, rowWidth);
+                }
+
+                Row("Attack Count", mon.attackCountNames, mon.attackCount, rowWidth);
+                if (mon.attackCount >= 1)
+                {
+                    Row("Attack Cost 1", mon.attackCost1, rowWidth);
+
+                    for (i32 i = 0; i < mon.attackCost1 && i < 6; i++)
+                    {
+                        Row("Cost 1 Type " + std::to_string(i + 1), mon.typeNames, mon.attack1CostType[i], rowWidth);
+                    }
+
+                    Row("Attack 1 Name", mon.attackName1, rowWidth);
+                    Row("Attack 1 Effect", mon.attackEffect1, rowWidth);
+                }
+
+                if (mon.attackCount == 2)
+                {
+                    Row("Attack Cost 2", mon.attackCost2, rowWidth);
+
+                    for (i32 i = 0; i < mon.attackCost2 && i < 6; i++)
+                    {
+                        Row("Cost 2 Type " + std::to_string(i + 1), mon.typeNames, mon.attack2CostType[i], rowWidth);
+                    }
+
+                    Row("Attack 2 Name", mon.attackName2, rowWidth);
+                    Row("Attack 2 Effect", mon.attackEffect2, rowWidth);
+                }
+
+                Row("Weakness", mon.typeNames, reinterpret_cast<u8&>(mon.currentWeakness), rowWidth);
+                Row("Retreat Cost", mon.retreatCost, rowWidth);
+                Row("Illustrator", mon.illustrator, rowWidth);
+                Row("Rarity", mon.rarityNames, reinterpret_cast<u8&>(mon.currentRarity), rowWidth);
+
+                if (!mon.isEX)
+                {
+                    Row("Flavor Text", mon.flavorText, rowWidth);
+                }
+
+                ImGui::EndTable();
+            }
+
+            if (ImGui::Button("Save"))
+            {
+                //saveScreenshotNow = true;
+            }
+
+            // Int Value Bounds Checks -- Written this way to provide wrap around
+            {
+                if (mon.health > 300)
+                    mon.health = 0;
+                else if (mon.health < 0)
+                    mon.health = 300;
+
+                if (mon.attackCost1 > 6)
+                    mon.attackCost1 = 0;
+                else if (mon.attackCost1 < 0)
                     mon.attackCost1 = 6;
-                }
 
-                //for (i32 i = 0; i < mon->attackCost1; i++)
-                //{
-                //    ImGui::PushID(5000 + i);
-                //    std::string name = "Cost Type " + std::to_string(i + 1);
-                //    Prefix(name);
-                //    name = "##" + name;
-                //    if (ImGui::Combo(name.c_str(), &mon_CostTypes1[i], typesCStrs.data(), static_cast<i32>(typesCStrs.size())))
-                //    {
-                //        std::string selected = _cardTemplate.types[mon_CostTypes1[i]];
-                //    }
-                //    ImGui::PopID();
-                //}
-
-                Prefix("Attack 1 Name");
-                ImGui::InputText("##Attack 1 Name", &mon.attackName1);
-
-                Prefix("Attack 1 Effect");
-                ImGui::InputText("##Attack 1 Effect", &mon.attackEffect1);
-            }
-
-            if (mon_CurrentAttackCount == 2)
-            {
-                Prefix("Attack 2 Cost");
-                ImGui::InputInt("##Attack 2 Cost", &mon.attackCost2);
-
-                if (mon.attackCost2 > 6 || mon.attackCost2 < 0)
-                {
+                if (mon.attackCost2 > 6)
+                    mon.attackCost2 = 0;
+                else if (mon.attackCost2 < 0)
                     mon.attackCost2 = 6;
-                }
 
-                //for (i32 i = 0; i < mon->attackCost2; i++)
-                //{
-                //    ImGui::PushID(6000 + i);
-                //    std::string name = "Cost Type " + std::to_string(i + 1);
-                //    Prefix(name);
-                //    name = "##" + name;
-                //    if (ImGui::Combo(name.c_str(), &mon_CostTypes2[i], typesCStrs.data(), static_cast<i32>(typesCStrs.size())))
-                //    {
-                //        std::string selected = _cardTemplate.types[mon_CostTypes2[i]];
-                //    }
-                //    ImGui::PopID();
-                //}
-
-                Prefix("Attack 2 Name");
-                ImGui::InputText("##Attack 2 Name", &mon.attackName2);
-
-                Prefix("Attack 2 Effect");
-                ImGui::InputText("##Attack 2 Effect", &mon.attackEffect2);
+                if (mon.retreatCost > 6)
+                    mon.retreatCost = 0;
+                else if (mon.retreatCost < 0)
+                    mon.retreatCost = 6;
             }
-
-            //Prefix("Weakness");
-            //if (ImGui::Combo("##Weakness", &mon->currentWeakness, typesCStrs.data(), static_cast<i32>(typesCStrs.size())))
-            //{
-            //    std::string selected = _cardTemplate.types[mon_CurrentWeakness];
-            //}
-
-            Prefix("Retreat Cost");
-            ImGui::InputInt("##Retreat Cost", &mon.retreatCost);
-
-            if (mon.retreatCost > 6)
-            {
-                mon.retreatCost = 6;
-            }
-
-            if (mon.retreatCost < 0)
-            {
-                mon.retreatCost = 0;
-            }
-
-            Prefix("Illustrator");
-            ImGui::InputText("##Illustrator", &mon.illustrator);
-
-            if (!mon.isEX)
-            {
-                Prefix("Flavor Text");
-                ImGui::InputText("##Flavor Text", &mon.flavorText);
-            }
-
-            //Prefix("Rarity");
-            //if (ImGui::Combo("##Rarity", &mon->rarity, rarityCStrs.data(), static_cast<i32>(rarityCStrs.size())))
-            //{
-            //    std::string selected = _cardTemplate.rarities[mon_CurrentRarity];
-            //}
         }
-
-        if (ImGui::Button("Save"))
-        {
-            //saveScreenshotNow = true;
-        }
-
         ImGui::End();
-        //ImGui::PopStyleVar(2);
-        //ImGui::PopFont();
 
         window.clear();
 
