@@ -30,7 +30,7 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 3. Build the project using [premake5](https://premake.github.io/download). You do this by opening a terminal at the project folder location and enter and run the command `premake5 vs2022 `
 4. Go to the new `Build` folder and open the CardLab.sln using [VS2022](https://visualstudio.microsoft.com/downloads/).
 5. Compile the project in release mode (or debug if you're feeling silly).
-6. 6. The project will compile to `\Build\bin\x86_64\Release`.
+6. The project will compile to `\Build\bin\x86_64\Release`.
 
 ## How-To Use
 1. Drag the `Data` folder into the same folder as the `Enigma's Card Lab.exe`.
