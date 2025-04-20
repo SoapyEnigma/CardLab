@@ -39,5 +39,5 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 ## Socials
 - [X/SoapyEnigma](https://x.com/SoapyEnigma)
 - [Youtube/SoapyEnigma](https://www.youtube.com/@SoapyEnigma)
-- [Rumble/SoapyEnigma]()
+- [Rumble/SoapyEnigma](https://rumble.com/user/SoapyEnigma)
 - [Card Lab Discord](https://discord.gg/kFZ7WjSZQT)
