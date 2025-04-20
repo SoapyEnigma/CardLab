@@ -296,12 +296,16 @@ int main()
 
     Pokemon mon;
     Pokemon tempMon;
+
     sf::Sprite* cardTemplate = nullptr;
     sf::Texture* cardTexture = nullptr;
+    sf::Sprite* borderSprite = nullptr;
+
     f32 rowWidth = 100.0f;
 
     sf::Texture abilityPlate("./Assets/Icons/Ability/ability_plate.png");
 
+    std::vector<sf::Texture> borders = LoadAssets("./Assets/Templates/Borders/");
     std::vector<sf::Texture> rarityIcons = LoadAssets("./Assets/Icons/Rarity/");
     std::vector<sf::Texture> typeIcons = LoadAssets("./Assets/Icons/Types/");
     std::vector<sf::Sprite> sprites;
@@ -475,12 +479,24 @@ int main()
             delete cardTemplate;
             cardTemplate = nullptr;
 
+            delete borderSprite;
+            borderSprite = nullptr;
+
             if (sf::Texture* tempTexture = LoadTemplate(mon))
             {
                 cardTexture = tempTexture;
                 cardTemplate = new sf::Sprite(*cardTexture);
 
                 cardTemplate->setPosition({ windowSize.x / 2.0f, 40.0f });
+
+                u8 rarity = mon.currentRarity == RARE ? 0 : mon.currentRarity;
+                u8 index = mon.currentStage != BASIC ? rarity / 2 + 1 : rarity / 2;
+
+                if (mon.currentRarity == RARE || rarity == DOUBLE_RARE || rarity == IMMERSIVE_RARE)
+                {
+                    borderSprite = new sf::Sprite(borders[index]);
+                    borderSprite->setPosition({ windowSize.x / 2.0f, 40.0f });
+                }
             }
         }
 
@@ -665,6 +681,11 @@ int main()
         if (cardTemplate)
         {
             window.draw(*cardTemplate);
+
+            if (borderSprite)
+            {
+                window.draw(*borderSprite);
+            }
 
             for (auto& sprite : sprites)
             {
