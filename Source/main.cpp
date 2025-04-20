@@ -199,9 +199,6 @@ void BeginRow(std::string_view name, f32 dummyWidth)
 }
 
 template<typename T>
-concept SmallInt = std::integral<T> && (sizeof(T) <= sizeof(int));
-
-template<SmallInt T>
 void Row(std::string_view name, T& value, f32 dummyWidth, i32 step = 1)
 {
     BeginRow(name, dummyWidth);
@@ -263,33 +260,11 @@ std::string GetWrappedText(const std::string& text, sf::Font& font, unsigned int
     return result;
 }
 
-std::vector<sf::Texture> LoadTypeIconAssets()
+std::vector<sf::Texture> LoadAssets(std::string_view s)
 {
     std::vector<sf::Texture> textures;
-    std::string dir = "./Assets/Icons/Types/";
 
-    for (const auto& entry : std::filesystem::directory_iterator(dir))
-    {
-        if (entry.path().extension() == ".png")
-        {
-            sf::Texture texture;
-            if (texture.loadFromFile(entry.path().string()))
-            {
-                texture.setSmooth(true);
-                textures.push_back(texture);
-            }
-        }
-    }
-
-    return textures;
-}
-
-std::vector<sf::Texture> LoadRarityIconAssets()
-{
-    std::vector<sf::Texture> textures;
-    std::string dir = "./Assets/Icons/Rarity/";
-
-    for (const auto& entry : std::filesystem::directory_iterator(dir))
+    for (const auto& entry : std::filesystem::directory_iterator(s))
     {
         if (entry.path().extension() == ".png")
         {
@@ -327,8 +302,8 @@ int main()
 
     sf::Texture abilityPlate("./Assets/Icons/Ability/ability_plate.png");
 
-    std::vector<sf::Texture> rarityIcons = LoadRarityIconAssets();
-    std::vector<sf::Texture> typeIcons = LoadTypeIconAssets();
+    std::vector<sf::Texture> rarityIcons = LoadAssets("./Assets/Icons/Rarity/");
+    std::vector<sf::Texture> typeIcons = LoadAssets("./Assets/Icons/Types/");
     std::vector<sf::Sprite> sprites;
 
     std::vector<sf::Text> texts;
@@ -513,7 +488,7 @@ int main()
         texts.clear();
         sprites.clear();
 
-        // Card Visual Structure 
+        // Card Visual Structure
         if (cardTemplate)
         {
             // Texts
@@ -523,7 +498,7 @@ int main()
 
             sf::Color TextColor = mon.currentType == DARKNESS && mon.currentRarity < ART_RARE ? sf::Color::White : sf::Color::Black;
 
-            CreateText(texts, fontBold, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, TextColor); // Good
+            CreateText(texts, fontBold, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, TextColor);
 
             if (mon.health > 0 && mon.health < 100)
                 healthValuePos.x -= 14.0f;
@@ -533,19 +508,19 @@ int main()
 
             if (mon.health > 0)
             {
-                CreateText(texts, fontBold, std::to_string(mon.health), { healthValuePos }, 26, TextColor); // Good
-                CreateText(texts, fontBoldCon, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, TextColor); // Good
+                CreateText(texts, fontBold, std::to_string(mon.health), { healthValuePos }, 26, TextColor);
+                CreateText(texts, fontBoldCon, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, TextColor);
             }
 
             if (mon.currentStage != BASIC)
-                CreateText(texts, fontReg, "Evolves from " + mon.evolvesFrom, { cardPos.x + 64.0f, cardPos.y + 47.0f }, 8); // Good
+                CreateText(texts, fontReg, "Evolves from " + mon.evolvesFrom, { cardPos.x + 64.0f, cardPos.y + 47.0f }, 8);
 
-            CreateText(texts, fontReg, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 250.0f }, 8, sf::Color::Black, true); // Good
+            CreateText(texts, fontReg, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 250.0f }, 8, sf::Color::Black, true);
 
             if (mon.currentWeakness != NONE)
-                CreateText(texts, fontBoldCon, "+20", { cardPos.x + 120.0f, cardPos.y + 438.0f }, 16); // Good
+                CreateText(texts, fontBoldCon, "+20", { cardPos.x + 120.0f, cardPos.y + 438.0f }, 16);
 
-            CreateText(texts, fontReg, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, TextColor); // Good
+            CreateText(texts, fontReg, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, TextColor);
 
             CreateText(texts, fontReg, mon.flavorText, { cardPos.x + (cardSize.x / 4.0f), cardPos.y }, 18, TextColor); // Needs wrap text box
 
@@ -571,38 +546,40 @@ int main()
                 else if (mon.hasAbility)
                     attackNamePos.y += 330.0f; // Re-align
                 else
-                    attackNamePos.y += 330.0f; // Good
+                    attackNamePos.y += 330.0f; // Re-align
 
                 if (mon.attackCost1 == 5)
                     attackNamePos.x += 26.0f;
 
-                CreateText(texts, fontBold, mon.attackName1, { attackNamePos }, 18, TextColor); // Good
+                CreateText(texts, fontBold, mon.attackName1, { attackNamePos }, 18, TextColor);
 
                 if (mon.attackDamage1 > 0)
                 {
                     f32 xMod = mon.attackDamage1 >= 100 ? 312.0f : 322.0f;
 
-                    CreateText(texts, fontBold, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos.y }, 18, TextColor); // Good
+                    CreateText(texts, fontBold, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos.y }, 18, TextColor);
                 }
 
                 CreateText(texts, fontReg, mon.attackEffect1, { 0, 0 }, 18, TextColor);
             }
 
+            //// Need to do this section
             if (mon.attackCount > 1)
             {
                 sf::Vector2f attackNamePos = { 0, 0 };
                 if (mon.hasAbility)
-                    attackNamePos = { cardPos.x + 97.0f, cardPos.y + 336.0f }; // Re-align
+                    attackNamePos = { cardPos.x + 97.0f, cardPos.y + 336.0f };
                 else
-                    attackNamePos = { cardPos.x + 97.0f, cardPos.y + 336.0f }; // Re-align
+                    attackNamePos = { cardPos.x + 97.0f, cardPos.y + 336.0f };
 
-                CreateText(texts, fontBold, mon.attackName2, { attackNamePos }, 18, TextColor); // Good
+                CreateText(texts, fontBold, mon.attackName2, { attackNamePos }, 18, TextColor);
 
                 if (mon.attackDamage2 > 0)
                     CreateText(texts, fontBold, std::to_string(mon.attackDamage2), { 0, 0 }, 18, TextColor);
 
                 CreateText(texts, fontReg, mon.attackEffect2, { 0, 0 }, 18, TextColor);
             }
+            ////
 
             // Icons/Sprites
             if (mon.hasAbility)
@@ -628,7 +605,6 @@ int main()
             if (mon.currentWeakness != NONE)
             {
                 sf::Sprite sprite(typeIcons[mon.currentWeakness]);
-                //sprite.setScale({ 0.16f, 0.16f });
                 sprite.setPosition({ cardPos.x + 104.0f, cardPos.y + 441.0f });
 
                 sprites.push_back(sprite);
@@ -637,7 +613,6 @@ int main()
             for (u8 i = 0; i < mon.retreatCost; i++)
             {
                 sf::Sprite sprite(typeIcons[COLORLESS]);
-                //sprite.setScale({ 0.16f, 0.16f });
                 sprite.setPosition({ cardPos.x + 250.0f + (i * 15.0f), cardPos.y + 441.0f });
 
                 sprites.push_back(sprite);
