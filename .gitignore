@@ -407,3 +407,4 @@ FodyWeavers.xsd
 /Vendor/SFML/examples
 /Vendor/SFML/lib/cmake
 Build/imgui.ini
+/Build/Assets
