@@ -3,7 +3,9 @@
 **Alpha release date: April 25th, 2025**
 
 * [What is this?](#What-is-this?)
-* [Application Support](#Application-Support)
+* [OS Support](#OS-Support)
+* [IDE Support](#IDE-Support)
+* [Dependencies](#Dependencies)
 * [How-To Build](#How---To-Build)
 * [How-To Use](#How---To-Use)
 * [Card Biology](#Card-Biology)
@@ -13,19 +15,28 @@
 ## What is this?
 This is the Enigma's Card Lab application. This tool is used to create custom cards for the mobile game Pokemon TCG Pocket. The goal of this tool is to provide users a quick and easy way to add and combine their own custom art for borders, illustrations, flairs, and etcetera to create new and unqiue cards that resemble and could pass for legitimate cards. The intent isn't to fool anyone, but to provide a realistic concepts for everyone to theorycraft, enjoy, and share. 
 
-## Application Support
+## OS Support
 - Windows
-- Visual Studio
+
+## IDE Support
+- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
+
+## Dependencies
+- [premake5](https://premake.github.io/download)
 
 ## How-To Build
-1. Pull the repo.
-2. Build the project using premake5.
-3. Open the CardLab.sln using VS2022.
-4. Compile the project in release mode.
-5. Take the compiled folder, and drag the Data folder into it.
-6. Run the application.
+1. Download the dependencies and IDE.
+2. Fork and clone the repository.
+3. Build the project using [premake5](https://premake.github.io/download). You do this by opening a terminal at the project folder location and enter and run the command `premake5 vs2022 `
+4. Go to the new `Build` folder and open the CardLab.sln using [VS2022](https://visualstudio.microsoft.com/downloads/).
+5. Compile the project in release mode (or debug if you're feeling silly).
+6. 6. The project will compile to `\Build\bin\x86_64\Release`.
 
 ## How-To Use
+1. Drag the `Data` folder into the same folder as the `Enigma's Card Lab.exe`.
+2. Put your custom illustrations into the `Custom/Illustrations/` folder.
+3. Put your custom flairs (or fancy layers) into the `Custom/Flairs/` folder.
+4. Run the application.
 
 ## Card Biology
 
