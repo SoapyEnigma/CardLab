@@ -13,7 +13,7 @@
 * [Socials](#Socials)
 
 ## What is this?
-This is the Enigma's Card Lab application. This tool is used to create custom cards for the mobile game Pokemon TCG Pocket. The goal of this tool is to provide users a quick and easy way to add and combine their own custom art for borders, illustrations, flairs, and etcetera to create new and unqiue cards that resemble and could pass for legitimate cards. The intent isn't to fool anyone, but to provide a realistic concepts for everyone to theorycraft, enjoy, and share. 
+This is the Enigma's Card Lab application. This tool is used to create custom cards for the mobile game Pokemon TCG Pocket. The goal of this tool is to provide users a quick and easy way to add and combine their own custom art for borders, illustrations, flairs, and etcetera to create new and unqiue cards that resemble and could pass for legitimate cards. The intent isn't to fool anyone, but to provide realistic concepts for everyone to theorycraft, enjoy, and share. 
 
 ## OS Support
 - Windows
