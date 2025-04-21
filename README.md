@@ -50,3 +50,4 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 ## Socials
 - [X/SoapyEnigma](https://x.com/SoapyEnigma)
 - [Card Lab Discord](https://discord.gg/kFZ7WjSZQT)
+- [Buy Me A Coffe](https://buymeacoffee.com/soapyenigma)
