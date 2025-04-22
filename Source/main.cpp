@@ -223,7 +223,8 @@ void Row(std::string_view name, std::string& value, f32 dummyWidth)
     ImGui::InputText(("##" + std::string(name)).c_str(), &value);
 }
 
-void CreateText(std::vector<sf::Text>& texts, sf::Font& font, std::string_view s, sf::Vector2f pos, u32 size = 18, sf::Color color = sf::Color::Black, bool centerOrigin = false)
+void CreateText(std::vector<sf::Text>& texts, sf::Font& font, std::string_view s, sf::Vector2f pos, u32 size = 18,
+    sf::Color color = sf::Color::Black, bool doOutline = false, sf::Color outlineColor = sf::Color::White, bool centerOrigin = false)
 {
     sf::Text t(font, std::string(s), size);
 
@@ -233,6 +234,11 @@ void CreateText(std::vector<sf::Text>& texts, sf::Font& font, std::string_view s
     t.setPosition(pos);
     t.setFillColor(color);
 
+    if (doOutline)
+    {
+        t.setOutlineThickness(0.5f);
+        t.setOutlineColor(outlineColor);
+    }
     texts.push_back(t);
 }
 
@@ -292,7 +298,8 @@ std::vector<std::string> GetRightAlignedWrappedLines(std::string_view text, sf::
     return result;
 }
 
-void CreateRightAlignedWrappedText(std::vector<sf::Text>& texts, std::vector<std::string>& lines, sf::Font& font, u32 fontSize, f32 rightEdge, f32 yPos, f32 lineHeight, sf::Color color)
+void CreateRightAlignedWrappedText(std::vector<sf::Text>& texts, std::vector<std::string>& lines, sf::Font& font, u32 fontSize, f32 rightEdge, f32 yPos, f32 lineHeight,
+    sf::Color color, bool doOutline = false, sf::Color outline = sf::Color::White, bool centerOrigin = false)
 {
     sf::Text temp(font, "", fontSize);
 
@@ -306,7 +313,7 @@ void CreateRightAlignedWrappedText(std::vector<sf::Text>& texts, std::vector<std
         f32 lineWidth = temp.getLocalBounds().size.x;
 
         sf::Vector2f pos(rightEdge - lineWidth, yPos + i * lineHeight);
-        CreateText(texts, font, line, pos, fontSize, color);
+        CreateText(texts, font, line, pos, fontSize, color, doOutline, outline, centerOrigin);
     }
 }
 
@@ -622,8 +629,9 @@ int main()
             sf::Vector2f healthValuePos = { cardPos.x + 305.0f, cardPos.y + 13.0f };
 
             sf::Color textColor = mon.currentType == DARKNESS && mon.currentRarity < ART_RARE ? sf::Color::White : sf::Color::Black;
+            bool doOutline = mon.currentRarity >= ART_RARE ? true : false;
 
-            CreateText(texts, fontBold, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, textColor);
+            CreateText(texts, fontBold, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, textColor, doOutline);
 
             if (mon.health > 0 && mon.health < 100)
             {
@@ -636,8 +644,8 @@ int main()
 
             if (mon.health > 0)
             {
-                CreateText(texts, fontBold, std::to_string(mon.health), { healthValuePos }, 26, textColor);
-                CreateText(texts, fontBoldCon, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, textColor);
+                CreateText(texts, fontBold, std::to_string(mon.health), { healthValuePos }, 26, textColor, doOutline);
+                CreateText(texts, fontBoldCon, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, textColor, doOutline);
             }
 
             if (mon.currentStage != BASIC)
@@ -645,9 +653,9 @@ int main()
                 CreateText(texts, fontReg, "Evolves from " + mon.evolvesFrom, { cardPos.x + 64.0f, cardPos.y + 47.0f }, 8);
             }
 
-            if (!mon.isEX)
+            if (!mon.isEX && mon.currentRarity <= RARE)
             {
-                CreateText(texts, fontReg, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 250.0f }, 8, sf::Color::Black, true);
+                CreateText(texts, fontReg, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 249.0f }, 8, sf::Color::Black, false, sf::Color::White, true);
             }
 
             if (mon.currentWeakness != NONE)
@@ -657,18 +665,18 @@ int main()
 
             if (!mon.illustrator.empty())
             {
-                CreateText(texts, fontReg, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, textColor);
+                CreateText(texts, fontReg, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, textColor, doOutline);
             }
 
             std::vector<std::string> flavorLines = GetRightAlignedWrappedLines(mon.flavorText, fontReg, 8, 155.0f);
-            CreateRightAlignedWrappedText(texts, flavorLines, fontReg, 8, cardPos.x + 340.0f, cardPos.y + 460.0f, 11.0f, textColor);
+            CreateRightAlignedWrappedText(texts, flavorLines, fontReg, 8, cardPos.x + 340.0f, cardPos.y + 460.0f, 11.0f, textColor, doOutline);
 
             if (mon.hasAbility)
             {
                 CreateText(texts, fontBold, mon.abilityName, { cardPos.x + 112.0f, cardPos.y + 272.0f }, 18, sf::Color{ 164, 12, 19 });
 
                 std::string text = GetWrappedText(mon.abilityEffect, fontReg, 14, 320.0f);
-                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, cardPos.y + 293.0f }, 14, textColor);
+                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, cardPos.y + 293.0f }, 14, textColor, doOutline);
             }
 
             sf::Text dummyAbilityEffectText(fontReg, GetWrappedText(mon.abilityEffect, fontReg, 14, 320.0f), 14);
@@ -701,17 +709,17 @@ int main()
                     attackNamePos1.x += 26.0f;
                 }
 
-                CreateText(texts, fontBold, mon.attackName1, { attackNamePos1 }, 18, textColor);
+                CreateText(texts, fontBold, mon.attackName1, { attackNamePos1 }, 18, textColor, doOutline);
 
                 if (mon.attackDamage1 > 0)
                 {
                     f32 xMod = mon.attackDamage1 >= 100 ? 312.0f : 322.0f;
 
-                    CreateText(texts, fontBold, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos1.y }, 18, textColor);
+                    CreateText(texts, fontBold, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos1.y }, 18, textColor, doOutline);
                 }
 
                 std::string text = GetWrappedText(mon.attackEffect1, fontReg, 14, 320.0f);
-                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, attackNamePos1.y + 24.0f }, 14, textColor);
+                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, attackNamePos1.y + 24.0f }, 14, textColor, doOutline);
             }
 
             sf::Text dummyAttackEffect1Text(fontReg, GetWrappedText(mon.attackEffect1, fontReg, 14, 320.0f), 14);
@@ -725,17 +733,17 @@ int main()
                     attackNamePos2.x += 26.0f;
                 }
 
-                CreateText(texts, fontBold, mon.attackName2, { attackNamePos2 }, 18, textColor);
+                CreateText(texts, fontBold, mon.attackName2, { attackNamePos2 }, 18, textColor, doOutline);
 
                 if (mon.attackDamage2 > 0)
                 {
                     f32 xMod = mon.attackDamage2 >= 100 ? 312.0f : 322.0f;
 
-                    CreateText(texts, fontBold, std::to_string(mon.attackDamage2), { cardPos.x + xMod, attackNamePos2.y }, 18, textColor);
+                    CreateText(texts, fontBold, std::to_string(mon.attackDamage2), { cardPos.x + xMod, attackNamePos2.y }, 18, textColor, doOutline);
                 }
 
                 std::string text = GetWrappedText(mon.attackEffect2, fontReg, 14, 320.0f);
-                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, attackNamePos2.y + 24.0f }, 14, textColor);
+                CreateText(texts, fontReg, text, { cardPos.x + 26.0f, attackNamePos2.y + 24.0f }, 14, textColor, doOutline);
             }
 
             // Icons/Sprites
@@ -746,8 +754,10 @@ int main()
                 sf::Sprite sprite(exIcons[index]);
 
                 sf::Text dummyNameText(fontBold, mon.name, 28);
+                
                 f32 x = cardPos.x + 63.0f + dummyNameText.getGlobalBounds().size.length();
-                sprite.setPosition({ x, cardPos.y + 22.0f });
+                f32 y = index ? cardPos.y + 20.0f : cardPos.y + 22.0f; // index 1 EX sprite is slightly bigger
+                sprite.setPosition({ x, y });
 
                 sprites.push_back(sprite);
             }
@@ -811,7 +821,7 @@ int main()
             }
             else if (mon.currentRarity >= ART_RARE && mon.currentRarity <= IMMERSIVE_RARE)
             {
-                u8 count = mon.currentRarity == ART_RARE || mon.currentRarity == SUPER_RARE ? 1 : 2;
+                u8 count = mon.currentRarity > SUPER_RARE ? mon.currentRarity - 5 : mon.currentRarity - 4;
 
                 for (u8 i = 0; i < count; i++)
                 {
