@@ -11,6 +11,9 @@ project "CardLab"
     cppdialect "C++20"
     systemversion "latest"
 	targetname "Enigma's Card Lab"
+	
+	os.mkdir("Build/Custom/Flairs")
+	os.mkdir("Build/Custom/Illustrations")
 
     targetdir ("Build/bin/%{cfg.architecture}/%{cfg.buildcfg}")
     objdir ("Build/obj/%{cfg.architecture}/%{cfg.buildcfg}")
@@ -82,7 +85,7 @@ project "CardLab"
 			"sfml-window-s-d",
 			"sfml-system-s-d",
 		}
-
+		
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "On"
@@ -93,3 +96,10 @@ project "CardLab"
 			"sfml-window-s",
 			"sfml-system-s",
 		}
+		
+	filter "configurations:*"
+    postbuildcommands 
+    {
+        "{MKDIR} %{cfg.targetdir}/Custom/Flairs",
+        "{MKDIR} %{cfg.targetdir}/Custom/Illustrations"
+    }
