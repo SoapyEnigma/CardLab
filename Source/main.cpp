@@ -82,8 +82,10 @@ struct Pokemon
     u8 attackCount = 0;
     i8 attackCost1 = 0;
     i16 attackDamage1 = 0;
+    u8 attackDamageAffix1 = 0;
     i8 attackCost2 = 0;
     i16 attackDamage2 = 0;
+    u8 attackDamageAffix2 = 0;
     i8 retreatCost = 0;
 
     u32 currentPreEvo = 0;
@@ -110,6 +112,8 @@ struct Pokemon
 
     std::vector<std::string> stageNames = { "Basic", "Stage 1", "Stage 2" };
     std::vector<std::string> attackCountNames = { "Zero", "One", "Two" };
+
+    std::vector<std::string> damageAffixes = { "", "×", "+", "-" };
 
     std::vector<u8> attack1CostType = { 0, 0, 0, 0, 0 };
     std::vector<u8> attack2CostType = { 0, 0, 0, 0, 0 };
@@ -171,6 +175,14 @@ void Row(std::string_view name, std::string& value)
 {
     BeginRow(name);
     ImGui::InputText(("##" + std::string(name)).c_str(), &value);
+}
+
+void DummyRow()
+{
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Dummy({ 0.0f, 30.0f});
+    ImGui::TableSetColumnIndex(1);
 }
 
 void CreateText(std::vector<sf::Text>& texts, sf::Font& font, std::string_view s, sf::Vector2f pos, u32 size = 18,
@@ -568,8 +580,8 @@ sf::Texture* LoadTemplate(HANDLE archive, Pokemon& mon)
 int main()
 {
     std::string name = "Enigma's Card Lab ";
-    std::string version = "v0.10.";
-    std::string date = "250423a";
+    std::string version = "v0.11.";
+    std::string date = "250424a";
 
     ImVec2 windowSize = { 800, 600 };
     ImVec2 windowHalf = { 400, 300 };
@@ -762,6 +774,7 @@ int main()
                     }
 
                     Row("Attack 1 Name", mon.attackName1);
+                    Row("Damage 1 Affix", mon.damageAffixes, mon.attackDamageAffix1);
                     Row("Attack 1 Damage", mon.attackDamage1, 10);
                     Row("Attack 1 Effect", mon.attackEffect1);
                 }
@@ -776,6 +789,7 @@ int main()
                     }
 
                     Row("Attack 2 Name", mon.attackName2);
+                    Row("Damage 2 Affix", mon.damageAffixes, mon.attackDamageAffix2);
                     Row("Attack 2 Damage", mon.attackDamage2, 10);
                     Row("Attack 2 Effect", mon.attackEffect2);
                 }
@@ -792,6 +806,8 @@ int main()
                 {
                     Row("Flavor Text", mon.flavorText);
                 }
+
+                DummyRow();
 
                 ImGui::EndTable();
             }
@@ -1161,7 +1177,21 @@ int main()
                 {
                     f32 xMod = mon.attackDamage1 >= 100 ? 312.0f : 322.0f;
 
-                    CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos1.y }, 18, textColor, doOutline);
+                    CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage1), {cardPos.x + xMod, attackNamePos1.y}, 18, textColor, doOutline);
+
+                    if (!mon.damageAffixes[mon.attackDamageAffix1].empty())
+                    {
+                        if (mon.damageAffixes[mon.attackDamageAffix1] == "-")
+                        {
+                            xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
+                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix1], { cardPos.x + xMod , attackNamePos1.y }, 16, textColor, doOutline);
+                        }
+                        else
+                        {
+                            xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
+                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix1], { cardPos.x + xMod , attackNamePos1.y + 5.0f }, 12, textColor, doOutline);
+                        }
+                    }
                 }
 
                 std::string text = GetWrappedText(mon.attackEffect1, fontReg.fontVar, 14, 320.0f);
@@ -1186,6 +1216,20 @@ int main()
                     f32 xMod = mon.attackDamage2 >= 100 ? 312.0f : 322.0f;
 
                     CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage2), { cardPos.x + xMod, attackNamePos2.y }, 18, textColor, doOutline);
+
+                    if (!mon.damageAffixes[mon.attackDamageAffix2].empty())
+                    {
+                        if (mon.damageAffixes[mon.attackDamageAffix2] == "-")
+                        {
+                            xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
+                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix2], { cardPos.x + xMod , attackNamePos2.y }, 16, textColor, doOutline);
+                        }
+                        else
+                        {
+                            xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
+                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix2], { cardPos.x + xMod , attackNamePos2.y + 5.0f }, 12, textColor, doOutline);
+                        }
+                    }
                 }
 
                 std::string text = GetWrappedText(mon.attackEffect2, fontReg.fontVar, 14, 320.0f);

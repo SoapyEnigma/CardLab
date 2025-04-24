@@ -127,5 +127,6 @@ project "CardLab"
 		"{COPYFILE} %[Data/Custom/Evolves_From/pre_evolution_template.png] %[%{!cfg.targetdir}/Custom/Evolves_From/]",
 		"{COPYFILE} %[Data/Custom/Illustrations/fa_illustration_template.png] %[%{!cfg.targetdir}/Custom/Illustrations/]",
 		"{COPYFILE} %[Data/Custom/Illustrations/normal_illustration_template.png] %[%{!cfg.targetdir}/Custom/Illustrations/]",
+		"{COPYFILE} %[Data/Notes.txt] %[%{!cfg.targetdir}]",
 		"{COPYFILE} %[Data/Data.mpq] %[%{!cfg.targetdir}]"
     }
