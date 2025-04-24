@@ -2,7 +2,7 @@
 
 **Alpha release date: April 25th, 2025**
 
-There is a download for a pre compiled version of this program so that you can skipp the build and compile process. On the side bar, click on `Releases`, then  `Assets`, and there is a file called `Alpha.Release.v0.10.250424a.zip`. Download that and unzip it.
+There is a download for a pre compiled version of this program so that you can skip the build and compile process. On the side bar, click on `Releases`, then  `Assets`, and there is a file called `Alpha.Release.v0.11.250424a.zip`. Download that and unzip it.
 
 * [What is this?](#What-is-this?)
 * [OS Support](#OS-Support)
