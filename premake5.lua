@@ -6,7 +6,6 @@ workspace "CardLab"
 
 project "CardLab"
     location "Build"
-    kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
     systemversion "latest"
@@ -14,6 +13,9 @@ project "CardLab"
 	
 	os.mkdir("Build/Custom/Flairs")
 	os.mkdir("Build/Custom/Illustrations")
+	os.mkdir("Build/Custom/Evolves_From")
+	
+	os.copyfile("Data/Data.mpq", "Build/Data.mpq")
 
     targetdir ("Build/bin/%{cfg.architecture}/%{cfg.buildcfg}")
     objdir ("Build/obj/%{cfg.architecture}/%{cfg.buildcfg}")
@@ -25,7 +27,7 @@ project "CardLab"
 		"Vendor/imgui/**.cpp",
 		"Vendor/imgui/**.h",
 		"Vendor/imgui/misc/cpp/**.cpp",
-		"Vendor/imgui/misc/cpp/**.h"
+		"Vendor/imgui/misc/cpp/**.h",
     }
 	
 	excludes
@@ -50,12 +52,14 @@ project "CardLab"
 	{
         "Vendor/imgui",
 		"Vendor/imgui/misc/cpp",
-        "Vendor/SFML/include"
+        "Vendor/SFML/include",
+		"Vendor/StormLib/src"
     }
 
     libdirs
 	{
-        "Vendor/SFML/lib"
+        "Vendor/SFML/lib",
+		"Vendor/StormLib/lib"
     }
 
     links
@@ -70,6 +74,9 @@ project "CardLab"
         "vorbis",
         "ogg",
         "ws2_32",
+		"StormLibRUS",
+		"StormLibDUD",
+		"StormLibRUD"
     }
 
     filter "system:windows"
@@ -78,6 +85,7 @@ project "CardLab"
     filter "configurations:Debug"
         defines { "DEBUG" }
         symbols "On"
+		kind "ConsoleApp"
 		
 		links
 		{
@@ -89,6 +97,8 @@ project "CardLab"
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "On"
+		kind "WindowedApp"
+        entrypoint "mainCRTStartup"
 
 		links
 		{
@@ -101,5 +111,8 @@ project "CardLab"
     postbuildcommands 
     {
         "{MKDIR} %{cfg.targetdir}/Custom/Flairs",
-        "{MKDIR} %{cfg.targetdir}/Custom/Illustrations"
+        "{MKDIR} %{cfg.targetdir}/Custom/Illustrations",
+		"{MKDIR} %{cfg.targetdir}/Custom/Evolves_From",
+		
+		"{COPYFILE} %[Data/Data.mpq] %[%{!cfg.targetdir}]"
     }
