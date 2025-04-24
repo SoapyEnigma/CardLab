@@ -45,6 +45,7 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 ## To-Do List:
 - Add the x and + for attack damage.
 - Add trainers.
+- Add icon element symbols to text.
 - Reorganize/rewrite the entire program and get it out of main.cpp
 
 ## Socials
