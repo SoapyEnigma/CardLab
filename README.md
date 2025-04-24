@@ -2,6 +2,8 @@
 
 **Alpha release date: April 25th, 2025**
 
+There is a download for a pre compiled version of this program so that you can skipp the build and compile process. On the side bar, click on `Releases`, then  `Assets`, and there is a file called `Alpha.Release.v0.10.250424a.zip`. Download that and unzip it.
+
 * [What is this?](#What-is-this?)
 * [OS Support](#OS-Support)
 * [IDE Support](#IDE-Support)
@@ -33,7 +35,7 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 6. The project will compile to `\Build\bin\x86_64\Release`.
 
 ## How-To Use
-1. Drag the `Data` folder into the same folder as the `Enigma's Card Lab.exe`.
+1. Go to the `Release` (or `Debug`) folder..
 2. Put your custom illustrations into the `Custom/Illustrations/` folder.
 3. Put your custom flairs (or fancy layers) into the `Custom/Flairs/` folder.
 4. Run the application.
@@ -41,11 +43,10 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 ## Card Biology
 
 ## To-Do List:
--
--
--
--
--
+- Add the x and + for attack damage.
+- Add trainers.
+- Add icon element symbols to text.
+- Reorganize/rewrite the entire program and get it out of main.cpp
 
 ## Socials
 - [X/SoapyEnigma](https://x.com/SoapyEnigma)
