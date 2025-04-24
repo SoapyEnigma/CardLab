@@ -33,7 +33,7 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 6. The project will compile to `\Build\bin\x86_64\Release`.
 
 ## How-To Use
-1. Drag the `Data` folder into the same folder as the `Enigma's Card Lab.exe`.
+1. Go to the `Release` (or `Debug`) folder..
 2. Put your custom illustrations into the `Custom/Illustrations/` folder.
 3. Put your custom flairs (or fancy layers) into the `Custom/Flairs/` folder.
 4. Run the application.
