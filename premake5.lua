@@ -1,3 +1,13 @@
+function copyFolderRecursive(sourceDir, targetDir)
+    local files = os.matchfiles(sourceDir .. "/**")
+    for _, file in ipairs(files) do
+        local relative = path.getrelative(sourceDir, file)
+        local targetPath = path.join(targetDir, relative)
+        os.mkdir(path.getdirectory(targetPath))
+        os.copyfile(file, targetPath)
+    end
+end
+
 workspace "CardLab"
     architecture "x64"
     configurations { "Debug", "Release" }
@@ -11,10 +21,8 @@ project "CardLab"
     systemversion "latest"
 	targetname "Enigma's Card Lab"
 	
+	copyFolderRecursive("Data/Custom", "Build/Custom")
 	os.mkdir("Build/Custom/Flairs")
-	os.mkdir("Build/Custom/Illustrations")
-	os.mkdir("Build/Custom/Evolves_From")
-	
 	os.copyfile("Data/Data.mpq", "Build/Data.mpq")
 
     targetdir ("Build/bin/%{cfg.architecture}/%{cfg.buildcfg}")
@@ -110,9 +118,14 @@ project "CardLab"
 	filter "configurations:*"
     postbuildcommands 
     {
+		'xcopy /E /I /Y "Data\\Custom" "%{cfg.targetdir}\\Custom\\"',
         "{MKDIR} %{cfg.targetdir}/Custom/Flairs",
-        "{MKDIR} %{cfg.targetdir}/Custom/Illustrations",
 		"{MKDIR} %{cfg.targetdir}/Custom/Evolves_From",
+		"{MKDIR} %{cfg.targetdir}/Custom/Illustrations",
 		
+		
+		"{COPYFILE} %[Data/Custom/Evolves_From/pre_evolution_template.png] %[%{!cfg.targetdir}/Custom/Evolves_From/]",
+		"{COPYFILE} %[Data/Custom/Illustrations/fa_illustration_template.png] %[%{!cfg.targetdir}/Custom/Illustrations/]",
+		"{COPYFILE} %[Data/Custom/Illustrations/normal_illustration_template.png] %[%{!cfg.targetdir}/Custom/Illustrations/]",
 		"{COPYFILE} %[Data/Data.mpq] %[%{!cfg.targetdir}]"
     }

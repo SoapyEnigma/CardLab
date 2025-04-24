@@ -1,0 +1,6 @@
+Pre Evolution images are 36x34 pixels. These go in "Custom/Evolve_From".
+Flair images are the same size as a card - 367x512 pixels. These go in "Custom/Flairs".
+Normal Illustration images are 308x194 pixels. These go in "Custom/Illustrations".
+Full Art Illustration images are 340x490 pixels. These go in "Custom/Illustrations".
+
+Correctly sized "templates" are provided in the appporpriate places.
