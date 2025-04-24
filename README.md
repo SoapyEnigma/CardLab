@@ -1,6 +1,7 @@
 # Enigma's Card Lab
 
 **Alpha release date: April 25th, 2025**
+There is a download for an already compiled version of this program. Under `Releases` on the side bar, there is a file called `Alpha.Release.v0.10.250424a.zip`. Download that and unzip it.
 
 * [What is this?](#What-is-this?)
 * [OS Support](#OS-Support)
@@ -41,11 +42,9 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 ## Card Biology
 
 ## To-Do List:
--
--
--
--
--
+- Add the x and + for attack damage.
+- Add trainers.
+- Reorganize/rewrite the entire program and get it out of main.cpp
 
 ## Socials
 - [X/SoapyEnigma](https://x.com/SoapyEnigma)
