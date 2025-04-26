@@ -409,3 +409,4 @@ FodyWeavers.xsd
 Build/imgui.ini
 /Build/Assets
 /Build/Custom
+/Build

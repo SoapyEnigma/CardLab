@@ -22,6 +22,13 @@ using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
 
+enum CARD_TYPES
+{
+    PICK_ONE,  // None
+    POKEMON,
+    TRAINER
+};
+
 enum ELEMENT_TYPES
 {
     NONE,
@@ -60,6 +67,16 @@ enum RARITY
     D_SHINY_RARE,       // 2 Star Shiny
 };
 
+enum TRAINER_TYPES
+{
+    CHOOSE, // None
+    ITEM,
+    SUPPORTER,
+    FOSSIL,
+    TOOL,
+    STADIUM
+};
+
 struct Pokemon
 {
     bool isEX = false;
@@ -88,6 +105,7 @@ struct Pokemon
     u8 attackDamageAffix2 = 0;
     i8 retreatCost = 0;
 
+    u8 currentCRBackplate = 0;
     u32 currentPreEvo = 0;
     u32 currentIllus = 0;
     u32 currentFlair = 0;
@@ -113,7 +131,7 @@ struct Pokemon
     std::vector<std::string> stageNames = { "Basic", "Stage 1", "Stage 2" };
     std::vector<std::string> attackCountNames = { "Zero", "One", "Two" };
 
-    std::vector<std::string> damageAffixes = { "", "×", "+", "-" };
+    std::vector<std::string> damageAffixes = { "No Affix", "x", "+", "-" };
 
     std::vector<u8> attack1CostType = { 0, 0, 0, 0, 0 };
     std::vector<u8> attack2CostType = { 0, 0, 0, 0, 0 };
@@ -121,7 +139,47 @@ struct Pokemon
     bool operator==(const Pokemon& other) const
     {
         return (currentType == other.currentType) && (currentStage == other.currentStage) && (currentRarity == other.currentRarity)
-            && (currentFlair == other.currentFlair) && (currentIllus == other.currentIllus) && (isEX == other.isEX);
+            && (currentFlair == other.currentFlair) && (currentIllus == other.currentIllus) && (isEX == other.isEX)
+            && (currentCRBackplate == other.currentCRBackplate);
+    }
+};
+
+struct Trainer
+{
+    std::string name = "";
+    std::string effect = "";
+    std::string illustrator = "";
+    u8 health = 0;
+    u8 currentType = 0;
+    u8 currentRarity = 0;
+    u8 currentCRBackplate = 0;
+    u32 currentIllus = 0;
+    u32 currentFlair = 0;
+
+    std::vector<std::string> rarityNames =
+    {
+        "Promo", "Common", "Uncommon", "Rare", "Double Rare",
+        "Art Rare", "Super Rare", "Special Art Rare",
+        "Immersive Rare", "Crown Rare",
+        "Shiny Rare", "Double Shiny Rare"
+    };
+
+    std::vector<std::string> cardTypes = { "None", "Item", "Supporter", "Fossil", "Tool", "Stadium" };
+
+    std::vector<std::string> ruleText =
+    {
+        "",
+        "You may play any number of Item cards during your turn.",
+        "You may play only 1 Supporter card during your turn.",
+        "You may play any number of Item cards during your turn.",
+        "You use Pokemon Tools by attaching them to your Pokemon. You may attach only 1 Pokemon tool to each Pokemon, and it says attached.",
+        "You may play only 1 Stadium card during your turn. Put it next to the Active Spot, and discard it if another Stadium comes into play. A Stadium with the same name can't be played."
+    };
+
+    bool operator==(const Trainer& other) const
+    {
+        return (currentType == other.currentType) && (currentRarity == other.currentRarity) && (currentFlair == other.currentFlair)
+            && (currentIllus == other.currentIllus) && (currentCRBackplate == other.currentCRBackplate);
     }
 };
 
@@ -198,7 +256,7 @@ void CreateText(std::vector<sf::Text>& texts, sf::Font& font, std::string_view s
 
     if (doOutline)
     {
-        t.setOutlineThickness(0.5f);
+        t.setOutlineThickness(1.0f);
         t.setOutlineColor(outlineColor);
     }
     texts.push_back(t);
@@ -299,7 +357,7 @@ std::vector<sf::Texture> LoadAssets(std::string_view s)
     return textures;
 }
 
-void SaveCard(sf::RenderTexture& texture, sf::Sprite* illus, sf::Sprite* nTemplate, sf::Sprite* nBorder, sf::Sprite* flair, std::vector<sf::Sprite> sprites, std::vector<sf::Text> texts, Pokemon mon)
+void SaveCard(sf::RenderTexture& texture, sf::Sprite* backPlate, sf::Sprite* illus, sf::Sprite* nTemplate, sf::Sprite* nBorder, sf::Sprite* flair, std::vector<sf::Sprite> sprites, std::vector<sf::Text> texts, Pokemon mon)
 {
 
     texture.clear(sf::Color::Transparent);
@@ -311,6 +369,11 @@ void SaveCard(sf::RenderTexture& texture, sf::Sprite* illus, sf::Sprite* nTempla
     sf::Transform offset;
     offset.translate({ -cardOrigin.x + 0.0f, -cardOrigin.y + 0.0f });
     states.transform = offset;
+
+    if (backPlate)
+    {
+        texture.draw(*backPlate, states);
+    }
 
     if (illus)
     {
@@ -343,6 +406,65 @@ void SaveCard(sf::RenderTexture& texture, sf::Sprite* illus, sf::Sprite* nTempla
 
     sf::Image image = texture.getTexture().copyToImage();
     std::string fileName = mon.isEX ? mon.name + "_EX.png" : mon.name + ".png";
+
+    std::string folderPath = "./My Cards/";
+    if (!std::filesystem::exists(folderPath))
+    {
+        std::filesystem::create_directory(folderPath);
+    }
+
+    if (!image.saveToFile(folderPath + fileName)) {}
+}
+
+void SaveCard(sf::RenderTexture& texture, sf::Sprite* backPlate, sf::Sprite* illus, sf::Sprite* nTemplate, sf::Sprite* nBorder, sf::Sprite* flair, std::vector<sf::Sprite> sprites, std::vector<sf::Text> texts, Trainer trainer)
+{
+
+    texture.clear(sf::Color::Transparent);
+
+    sf::RenderStates states;
+    states.blendMode = sf::BlendAlpha;
+
+    sf::Vector2f cardOrigin = nTemplate->getPosition();
+    sf::Transform offset;
+    offset.translate({ -cardOrigin.x + 0.0f, -cardOrigin.y + 0.0f });
+    states.transform = offset;
+
+    if (backPlate)
+    {
+        texture.draw(*backPlate, states);
+    }
+
+    if (illus)
+    {
+        texture.draw(*illus, states);
+    }
+
+    texture.draw(*nTemplate, states);
+
+    if (nBorder)
+    {
+        texture.draw(*nBorder, states);
+    }
+
+    if (flair)
+    {
+        texture.draw(*flair, states);
+    }
+
+    for (auto& sprite : sprites)
+    {
+        texture.draw(sprite, states);
+    }
+
+    for (auto& text : texts)
+    {
+        texture.draw(text, states);
+    }
+
+    texture.display();
+
+    sf::Image image = texture.getTexture().copyToImage();
+    std::string fileName = trainer.name + ".png";
 
     std::string folderPath = "./My Cards/";
     if (!std::filesystem::exists(folderPath))
@@ -511,7 +633,7 @@ std::vector<std::string> GetFileNamesInMpqDirectory(HANDLE archive, const std::s
             std::string ext = std::filesystem::path(filename).extension().string();
             if (std::find(validExtensions.begin(), validExtensions.end(), ext) != validExtensions.end())
             {
-                fileNames.push_back(filename); // e.g. "my_icon.png"
+                fileNames.push_back(filename);
             }
         } while (SFileFindNextFile(hFind, &findData));
 
@@ -566,7 +688,39 @@ sf::Texture* LoadTemplate(HANDLE archive, Pokemon& mon)
 
     path += mon.typeNames[mon.currentType] + ".png";
 
-    printf("%s\n", path.c_str());
+    sf::Texture* texture = LoadTextureFromMpq(archive, path);
+    if (!texture)
+    {
+        delete texture;
+        return nullptr;
+    }
+
+    return texture;
+}
+
+sf::Texture* LoadTemplate(HANDLE archive, Trainer& trainer)
+{
+    std::string path = "Templates\\Trainers\\";
+
+    switch (trainer.currentRarity)
+    {
+    case PROMO:
+    case COMMON:
+    case UNCOMMON:
+    case RARE:
+    case DOUBLE_RARE:
+    case ART_RARE:
+    case SUPER_RARE:
+    case SPECIAL_ART_RARE:
+    case IMMERSIVE_RARE:
+    case CROWN_RARE: path += "Crown.png";
+        break;
+    case SHINY_RARE:
+    case D_SHINY_RARE:
+    default:
+        break;
+    }
+
     sf::Texture* texture = LoadTextureFromMpq(archive, path);
     if (!texture)
     {
@@ -580,8 +734,8 @@ sf::Texture* LoadTemplate(HANDLE archive, Pokemon& mon)
 int main()
 {
     std::string name = "Enigma's Card Lab ";
-    std::string version = "v0.11.";
-    std::string date = "250424a";
+    std::string version = "v0.12.";
+    std::string date = "250425a";
 
     ImVec2 windowSize = { 800, 600 };
     ImVec2 windowHalf = { 400, 300 };
@@ -595,8 +749,12 @@ int main()
     if (!ImGui::SFML::Init(window)) {}
 
     sf::RenderTexture renderTexture({ 367, 512 });
+
     Pokemon mon;
     Pokemon tempMon;
+
+    Trainer trainer;
+    Trainer tempTrainer;
 
     HANDLE hMpq = nullptr;
     if (!SFileOpenArchive(L"Data.mpq", 0, 0, &hMpq))
@@ -650,13 +808,23 @@ int main()
     sf::Sprite* borderSprite = nullptr;
     sf::Sprite* typeSprite = nullptr;
 
+    CARD_TYPES majorCardTypesIndex = PICK_ONE;
+    std::vector<std::string> majorCardTypes = { "Pick One", "Pokemon", "Trainer" };
+
+    std::vector<std::string> backPlateNames = { "One", "Two", "Three" };
+
     std::vector<std::string> customEvolvesFromFileNames = GetFilesNamesInDirectory("./Custom/Evolves_From/");
     std::vector<std::string> customIllustrationFileNames = GetFilesNamesInDirectory("./Custom/Illustrations/");
     std::vector<std::string> customFlairFileNames = GetFilesNamesInDirectory("./Custom/Flairs/");
 
     sf::Texture* abilityPlate = LoadTextureFromMpq(hMpq, "Icons\\Ability\\ability_plate.png");
 
-    std::vector<sf::Texture*> borders = LoadTextureFolderFromMpq(hMpq, "Templates/Borders/");
+    std::vector<sf::Texture*> crBackplates = LoadTextureFolderFromMpq(hMpq, "Templates\\CR Plate\\");
+    sf::Sprite* backPlateSprite = nullptr;
+
+    std::vector<sf::Texture*> trainerRules = LoadTextureFolderFromMpq(hMpq, "Icons\\TrainerRules\\");
+    std::vector<sf::Texture*> trainerTypes = LoadTextureFolderFromMpq(hMpq, "Icons\\TrainerTypes\\");
+    std::vector<sf::Texture*> borders = LoadTextureFolderFromMpq(hMpq, "Templates\\Borders\\");
     std::vector<sf::Texture*> rarityIcons = LoadTextureFolderFromMpq(hMpq, "Icons\\Rarity\\");
     std::vector<sf::Texture*> typeIcons = LoadTextureFolderFromMpq(hMpq, "Icons\\Types\\");
     std::vector<sf::Texture*> attackTypeIcons = LoadTextureFolderFromMpq(hMpq, "Icons\\AttackTypes\\");
@@ -728,121 +896,166 @@ int main()
                 ImGui::TableSetupColumn("##Names", ImGuiTableColumnFlags_WidthFixed, windowHalf.x * 0.45f);
                 ImGui::TableSetupColumn("##Values", ImGuiTableColumnFlags_WidthFixed, windowHalf.x * 0.55f);
 
-                Row("Name", mon.name);
+                Row("Card Type", majorCardTypes, reinterpret_cast<u8&>(majorCardTypesIndex));
 
-                Row("Illustration", customIllustrationFileNames, mon.currentIllus);
-
-                Row("Flair", customFlairFileNames, mon.currentFlair);
-
-                Row("Type", mon.typeNames, reinterpret_cast<u8&>(mon.currentType));
-
-                Row("Stage", mon.stageNames, reinterpret_cast<u8&>(mon.currentStage));
-                
-                if (mon.currentStage != BASIC)
+                if (majorCardTypesIndex == POKEMON)
                 {
-                    Row("Evolves From", mon.evolvesFrom);
+                    Row("Name", mon.name);
 
-                    Row("Pre-Evo Icon", customEvolvesFromFileNames, mon.currentPreEvo);
-                }
-
-                Row("Health", mon.health, 10);
-
-                if (!mon.isEX)
-                {
-                    Row("Info", mon.basicInfo);
-                }
-
-                Row("Is Ex", mon.isEX);
-
-                Row("Has Ability", mon.hasAbility);
-                
-                if (mon.hasAbility && mon.attackCount < 2)
-                {
-                    Row("Ability Name", mon.abilityName);
-                    Row("Ability Effect", mon.abilityEffect);
-                }
-
-                Row("Attack Count", mon.attackCountNames, mon.attackCount);
-                
-                if (mon.attackCount >= 1)
-                {
-                    Row("Attack Cost 1", mon.attackCost1);
-
-                    for (i32 i = 0; i < mon.attackCost1 && i < 5; i++)
+                    if (mon.currentRarity == CROWN_RARE)
                     {
-                        Row("Cost 1 Type " + std::to_string(i + 1), mon.typeNames, mon.attack1CostType[i]);
+                        Row("Backplate", backPlateNames, mon.currentCRBackplate);
+                    }
+                    Row("Illustration", customIllustrationFileNames, mon.currentIllus);
+
+                    Row("Flair", customFlairFileNames, mon.currentFlair);
+
+                    Row("Type", mon.typeNames, reinterpret_cast<u8&>(mon.currentType));
+
+                    Row("Stage", mon.stageNames, reinterpret_cast<u8&>(mon.currentStage));
+
+                    if (mon.currentStage != BASIC)
+                    {
+                        Row("Evolves From", mon.evolvesFrom);
+
+                        Row("Pre-Evo Icon", customEvolvesFromFileNames, mon.currentPreEvo);
                     }
 
-                    Row("Attack 1 Name", mon.attackName1);
-                    Row("Damage 1 Affix", mon.damageAffixes, mon.attackDamageAffix1);
-                    Row("Attack 1 Damage", mon.attackDamage1, 10);
-                    Row("Attack 1 Effect", mon.attackEffect1);
-                }
+                    Row("Health", mon.health, 10);
 
-                if (mon.attackCount == 2 && !mon.hasAbility)
-                {
-                    Row("Attack Cost 2", mon.attackCost2);
-
-                    for (i32 i = 0; i < mon.attackCost2 && i < 5; i++)
+                    if (!mon.isEX && mon.currentRarity < DOUBLE_RARE)
                     {
-                        Row("Cost 2 Type " + std::to_string(i + 1), mon.typeNames, mon.attack2CostType[i]);
+                        Row("Info", mon.basicInfo);
                     }
 
-                    Row("Attack 2 Name", mon.attackName2);
-                    Row("Damage 2 Affix", mon.damageAffixes, mon.attackDamageAffix2);
-                    Row("Attack 2 Damage", mon.attackDamage2, 10);
-                    Row("Attack 2 Effect", mon.attackEffect2);
+                    Row("Is Ex", mon.isEX);
+
+                    Row("Has Ability", mon.hasAbility);
+
+                    if (mon.hasAbility && mon.attackCount < 2)
+                    {
+                        Row("Ability Name", mon.abilityName);
+                        Row("Ability Effect", mon.abilityEffect);
+                    }
+
+                    Row("Attack Count", mon.attackCountNames, mon.attackCount);
+
+                    if (mon.attackCount >= 1)
+                    {
+                        Row("Attack Cost 1", mon.attackCost1);
+
+                        for (i32 i = 0; i < mon.attackCost1 && i < 5; i++)
+                        {
+                            Row("Cost 1 Type " + std::to_string(i + 1), mon.typeNames, mon.attack1CostType[i]);
+                        }
+
+                        Row("Attack 1 Name", mon.attackName1);
+                        Row("Damage 1 Affix", mon.damageAffixes, mon.attackDamageAffix1);
+                        Row("Attack 1 Damage", mon.attackDamage1, 10);
+                        Row("Attack 1 Effect", mon.attackEffect1);
+                    }
+
+                    if (mon.attackCount == 2 && !mon.hasAbility)
+                    {
+                        Row("Attack Cost 2", mon.attackCost2);
+
+                        for (i32 i = 0; i < mon.attackCost2 && i < 5; i++)
+                        {
+                            Row("Cost 2 Type " + std::to_string(i + 1), mon.typeNames, mon.attack2CostType[i]);
+                        }
+
+                        Row("Attack 2 Name", mon.attackName2);
+                        Row("Damage 2 Affix", mon.damageAffixes, mon.attackDamageAffix2);
+                        Row("Attack 2 Damage", mon.attackDamage2, 10);
+                        Row("Attack 2 Effect", mon.attackEffect2);
+                    }
+
+                    Row("Weakness", mon.typeNames, reinterpret_cast<u8&>(mon.currentWeakness));
+
+                    Row("Retreat Cost", mon.retreatCost);
+
+                    Row("Illustrator", mon.illustrator);
+
+                    Row("Rarity", mon.rarityNames, reinterpret_cast<u8&>(mon.currentRarity));
+
+                    if (!mon.isEX)
+                    {
+                        Row("Flavor Text", mon.flavorText);
+                    }
+
+                    DummyRow();
                 }
 
-                Row("Weakness", mon.typeNames, reinterpret_cast<u8&>(mon.currentWeakness));
-
-                Row("Retreat Cost", mon.retreatCost);
-
-                Row("Illustrator", mon.illustrator);
-
-                Row("Rarity", mon.rarityNames, reinterpret_cast<u8&>(mon.currentRarity));
-
-                if (!mon.isEX)
+                if (majorCardTypesIndex == TRAINER)
                 {
-                    Row("Flavor Text", mon.flavorText);
-                }
+                    Row("Type", trainer.cardTypes, trainer.currentType);
 
-                DummyRow();
+                    Row("Name", trainer.name);
+
+                    if (trainer.currentRarity == CROWN_RARE)
+                    {
+                        Row("Backplate", backPlateNames, trainer.currentCRBackplate);
+                    }
+
+                    Row("Illustration", customIllustrationFileNames, trainer.currentIllus);
+
+                    if (trainer.currentType == FOSSIL)
+                    {
+                        Row("Health", trainer.health);
+                    }
+
+                    Row("Effect", trainer.effect);
+
+                    Row("Illustrator", trainer.illustrator);
+
+                    Row("Rarity", trainer.rarityNames, trainer.currentRarity);
+                }
 
                 ImGui::EndTable();
             }
 
             // Int Value Bounds Checks -- Written this way to provide wrap around
+            if (majorCardTypesIndex == POKEMON)
             {
-                if (mon.health > 300)
-                    mon.health = 0;
-                else if (mon.health < 0)
-                    mon.health = 300;
+                {
+                    if (mon.health > 300)
+                        mon.health = 0;
+                    else if (mon.health < 0)
+                        mon.health = 300;
 
-                if (mon.attackCost1 > 5)
-                    mon.attackCost1 = 0;
-                else if (mon.attackCost1 < 0)
-                    mon.attackCost1 = 5;
+                    if (mon.attackCost1 > 5)
+                        mon.attackCost1 = 0;
+                    else if (mon.attackCost1 < 0)
+                        mon.attackCost1 = 5;
 
-                if (mon.attackDamage1 > 500)
-                    mon.attackDamage1 = 0;
-                else if (mon.attackDamage1 < 0)
-                    mon.attackDamage1 = 500;
+                    if (mon.attackDamage1 > 500)
+                        mon.attackDamage1 = 0;
+                    else if (mon.attackDamage1 < 0)
+                        mon.attackDamage1 = 500;
 
-                if (mon.attackCost2 > 5)
-                    mon.attackCost2 = 0;
-                else if (mon.attackCost2 < 0)
-                    mon.attackCost2 = 5;
+                    if (mon.attackCost2 > 5)
+                        mon.attackCost2 = 0;
+                    else if (mon.attackCost2 < 0)
+                        mon.attackCost2 = 5;
 
-                if (mon.attackDamage2 > 500)
-                    mon.attackDamage2 = 0;
-                else if (mon.attackDamage2 < 0)
-                    mon.attackDamage2 = 500;
+                    if (mon.attackDamage2 > 500)
+                        mon.attackDamage2 = 0;
+                    else if (mon.attackDamage2 < 0)
+                        mon.attackDamage2 = 500;
 
-                if (mon.retreatCost > 6)
-                    mon.retreatCost = 0;
-                else if (mon.retreatCost < 0)
-                    mon.retreatCost = 6;
+                    if (mon.retreatCost > 6)
+                        mon.retreatCost = 0;
+                    else if (mon.retreatCost < 0)
+                        mon.retreatCost = 6;
+                }
+            }
+
+            if (majorCardTypesIndex == TRAINER && mon.currentType == FOSSIL)
+            {
+                if (trainer.health > 300)
+                    trainer.health = 0;
+                else if (trainer.health < 0)
+                    trainer.health = 300;
             }
         }
         ImGui::End();
@@ -857,16 +1070,33 @@ int main()
                 ImVec2 center = ImGui::GetMainViewport()->GetCenter();
                 ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.1f));
 
-                if (mon.name.empty() || !cardTemplate)
+                if (majorCardTypesIndex == POKEMON)
                 {
-                    showSaveFailurePopup = true;
-                    ImGui::OpenPopup("Save Failed");
+                    if (mon.name.empty() || !cardTemplate)
+                    {
+                        showSaveFailurePopup = true;
+                        ImGui::OpenPopup("Save Failed");
+                    }
+                    else
+                    {
+                        showSaveSuccessPopup = true;
+                        ImGui::OpenPopup("Save Successful");
+                        saveScreenshotNow = true;
+                    }
                 }
-                else
+                else if (majorCardTypesIndex == TRAINER)
                 {
-                    showSaveSuccessPopup = true;
-                    ImGui::OpenPopup("Save Successful");
-                    saveScreenshotNow = true;
+                    if (trainer.name.empty() || !cardTemplate)
+                    {
+                        showSaveFailurePopup = true;
+                        ImGui::OpenPopup("Save Failed");
+                    }
+                    else
+                    {
+                        showSaveSuccessPopup = true;
+                        ImGui::OpenPopup("Save Successful");
+                        saveScreenshotNow = true;
+                    }
                 }
             }
         }
@@ -925,438 +1155,628 @@ int main()
         ImGui::PopFont();
         ImGui::PopStyleColor();
 
-        // Generate Base Template
-        if (mon != tempMon)
+        if (majorCardTypesIndex == POKEMON)
         {
-            delete cardTexture;
-            cardTexture = nullptr;
-
-            delete cardTemplate;
-            cardTemplate = nullptr;
-
-            delete borderSprite;
-            borderSprite = nullptr;
-
-            sf::Texture* tempTexture = LoadTemplate(hMpq, mon);
-            if (tempTexture)
+            // Generate Base Template
+            if (mon != tempMon)
             {
-                cardTexture = tempTexture;
-                cardTemplate = new sf::Sprite(*cardTexture);
+                delete cardTexture;
+                cardTexture = nullptr;
 
-                cardTemplate->setPosition({ 20.0f, 40.0f });
+                delete cardTemplate;
+                cardTemplate = nullptr;
 
-                u8 rarity = mon.currentRarity == RARE ? 0 : mon.currentRarity;
-                u8 index = mon.currentStage != BASIC ? rarity / 2 + 1 : rarity / 2;
+                delete borderSprite;
+                borderSprite = nullptr;
 
-                if (mon.currentRarity == RARE || rarity == DOUBLE_RARE || rarity == IMMERSIVE_RARE)
+                sf::Texture* tempTexture = LoadTemplate(hMpq, mon);
+                if (tempTexture)
                 {
-                    borderSprite = new sf::Sprite(*borders[index]);
-                    borderSprite->setPosition({ 20.0f, 40.0f });
-                }
-            }
-            else
-            {
-                delete tempTexture;
-            }
-        }
+                    cardTexture = tempTexture;
+                    cardTemplate = new sf::Sprite(*cardTexture);
 
-        // Illustration
-        if (mon.currentIllus > 0 && mon != tempMon)
-        {
-            if (sf::Texture* tempTexture = new sf::Texture("./Custom/Illustrations/" + customIllustrationFileNames[mon.currentIllus]))
-            {
-                delete illusTexture;
-                illusTexture = tempTexture;
+                    cardTemplate->setPosition({ 20.0f, 40.0f });
 
-                delete illusSprite;
-                illusSprite = new sf::Sprite(*illusTexture);
+                    u8 rarity = mon.currentRarity == RARE ? 0 : mon.currentRarity;
+                    u8 index = mon.currentStage != BASIC ? rarity / 2 + 1 : rarity / 2;
 
-                if (mon.currentRarity < ART_RARE)
-                {
-                    illusSprite->setPosition({ 20.0f + 30.0f, 88.0f });
-                }
-                else
-                {
-                    illusSprite->setPosition({ 20.0f + 14.0f, 50.0f });
-                }
-            }
-        }
-        else if (mon.currentIllus == 0)
-        {
-            delete illusTexture;
-            illusTexture = nullptr;
-
-            delete illusSprite;
-            illusSprite = nullptr;
-        }
-
-        // Flair
-        if (!mon.currentFlair)
-        {
-            postFlairSprites.clear();
-        }
-
-        if (mon.currentFlair > 0 && mon != tempMon)
-        {
-            postFlairSprites.clear();
-
-            if (sf::Texture* tempTexture = new sf::Texture("./Custom/Flairs/" + customFlairFileNames[mon.currentFlair]))
-            {
-                delete flairTexture;
-                flairTexture = tempTexture;
-
-                delete flairSprite;
-                flairSprite = new sf::Sprite(*flairTexture);
-
-                flairSprite->setPosition({ 20.0f, 40.0f });
-            }
-
-            sf::Sprite* typeSprite = new sf::Sprite(*attackTypeIcons[mon.currentType]);
-            typeSprite->setPosition({ 20.0f + 321.0f, 55.0f });
-            typeSprite->setScale({ 1.27f, 1.27f });
-            postFlairSprites.push_back(typeSprite);
-
-            if (mon.currentRarity != CROWN_RARE)
-            {
-                if (mon.currentStage == BASIC)
-                {
-                    basicPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(basicPlateSprite);
-                }
-
-                if (mon.currentStage == STAGE_1)
-                {
-                    stage1PlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(stage1PlateSprite);
-                }
-
-                if (mon.currentStage == STAGE_2)
-                {
-                    stage2PlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(stage2PlateSprite);
-                }
-
-                weaknessPlateSprite->setPosition({ 20.0f + 26.0f, 479.0f });
-                postFlairSprites.push_back(weaknessPlateSprite);
-            }
-            else if (mon.currentRarity == CROWN_RARE)
-            {
-                if (mon.currentStage == BASIC)
-                {
-                    basicCRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(basicCRPlateSprite);
-                }
-
-                if (mon.currentStage == STAGE_1)
-                {
-                    stage1CRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(stage1CRPlateSprite);
-                }
-
-                if (mon.currentStage == STAGE_2)
-                {
-                    stage2CRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
-                    postFlairSprites.push_back(stage2CRPlateSprite);
-                }
-
-                weaknessCRPlateSprite->setPosition({ 20.0f + 26.0f, 479.0f });
-                postFlairSprites.push_back(weaknessCRPlateSprite);
-            }
-
-            if (mon.isEX)
-            {
-                exRuleSprite->setPosition({ 20.0f + 119.0f, 504.0f });
-                postFlairSprites.push_back(exRuleSprite);
-            }
-        }
-        else if (mon.currentFlair == 0)
-        {
-            delete flairSprite;
-            flairSprite = nullptr;
-
-            delete flairTexture;
-            flairTexture = nullptr;
-        }
-
-        tempMon = mon;
-        texts.clear();
-        sprites.clear();
-
-        // Card Visual Structure
-        if (cardTemplate)
-        {
-            // Texts
-            sf::Vector2f cardSize = { cardTemplate->getGlobalBounds().size.x, cardTemplate->getLocalBounds().size.y };
-            sf::Vector2f cardPos = cardTemplate->getPosition();
-            sf::Vector2f healthValuePos = { cardPos.x + 305.0f, cardPos.y + 13.0f };
-
-            sf::Color textColor = mon.currentType == DARKNESS && mon.currentRarity < ART_RARE ? sf::Color::White : sf::Color::Black;
-            bool doOutline = mon.currentRarity >= ART_RARE ? true : false;
-
-            CreateText(texts, fontSemiBold.fontVar, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, textColor, doOutline);
-
-            if (mon.health > 0 && mon.health < 100)
-            {
-                healthValuePos.x -= 14.0f;
-            }
-            else if (mon.health >= 100)
-            {
-                healthValuePos.x -= 28.0f;
-            }
-
-            if (mon.health > 0)
-            {
-                CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.health), { healthValuePos }, 26, textColor, doOutline);
-                CreateText(texts, fontMTBoldCond.fontVar, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, textColor, doOutline);
-            }
-
-            if (mon.currentStage != BASIC)
-            {
-                CreateText(texts, fontReg.fontVar, "Evolves from " + mon.evolvesFrom, { cardPos.x + 64.0f, cardPos.y + 47.0f }, 8);
-            }
-
-            if (!mon.isEX && mon.currentRarity <= RARE)
-            {
-                CreateText(texts, fontReg.fontVar, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 249.0f }, 8, sf::Color::Black, false, sf::Color::White, true);
-            }
-
-            if (mon.currentWeakness != NONE)
-            {
-                CreateText(texts, fontSemiBold.fontVar, "+20", { cardPos.x + 120.0f, cardPos.y + 438.0f }, 16);
-            }
-
-            if (!mon.illustrator.empty())
-            {
-                CreateText(texts, fontItalic.fontVar, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, textColor, doOutline);
-            }
-
-            std::vector<std::string> flavorLines = GetRightAlignedWrappedLines(mon.flavorText, fontReg.fontVar, 8, 155.0f);
-            CreateRightAlignedWrappedText(texts, flavorLines, fontReg.fontVar, 8, cardPos.x + 340.0f, cardPos.y + 460.0f, 11.0f, textColor, doOutline);
-
-            if (mon.hasAbility)
-            {
-                CreateText(texts, fontBold.fontVar, mon.abilityName, { cardPos.x + 112.0f, cardPos.y + 272.0f }, 18, sf::Color{ 164, 12, 19 }, mon.currentRarity > DOUBLE_RARE ? true : false);
-
-                std::string text = GetWrappedText(mon.abilityEffect, fontReg.fontVar, 14, 320.0f);
-                CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, cardPos.y + 293.0f }, 14, textColor, doOutline);
-            }
-
-            sf::Text dummyAbilityEffectText(fontReg.fontVar, GetWrappedText(mon.abilityEffect, fontReg.fontVar, 14, 320.0f), 14);
-            sf::Vector2f attackNamePos1 = { cardPos.x + 118.0f, mon.hasAbility ? cardPos.y + dummyAbilityEffectText.getLocalBounds().size.y : cardPos.y };
-
-            if (mon.attackCount > 0)
-            {
-                if (mon.hasAbility)
-                {
-                    attackNamePos1.y += 328.0f;
-                }
-                else if (mon.attackCount == 2)
-                {
-                    attackNamePos1.y += 292.0f;
-                }
-                else
-                {
-                    if (!mon.attackEffect1.empty())
+                    if (mon.currentRarity == RARE || rarity == DOUBLE_RARE || rarity == IMMERSIVE_RARE)
                     {
-                        attackNamePos1.y += 314.0f;
+                        borderSprite = new sf::Sprite(*borders[index]);
+                        borderSprite->setPosition({ 20.0f, 40.0f });
                     }
-                    else
-                    {
-                        attackNamePos1.y += 330.0f;
-                    }
-                }
-
-                if (mon.attackCost1 == 5)
-                {
-                    attackNamePos1.x += 24.0f;
-                }
-
-                CreateText(texts, fontSemiBold.fontVar, mon.attackName1, { attackNamePos1 }, 18, textColor, doOutline);
-
-                if (mon.attackDamage1 > 0)
-                {
-                    f32 xMod = mon.attackDamage1 >= 100 ? 312.0f : 322.0f;
-
-                    CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage1), {cardPos.x + xMod, attackNamePos1.y}, 18, textColor, doOutline);
-
-                    if (!mon.damageAffixes[mon.attackDamageAffix1].empty())
-                    {
-                        if (mon.damageAffixes[mon.attackDamageAffix1] == "-")
-                        {
-                            xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
-                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix1], { cardPos.x + xMod , attackNamePos1.y }, 16, textColor, doOutline);
-                        }
-                        else
-                        {
-                            xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
-                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix1], { cardPos.x + xMod , attackNamePos1.y + 5.0f }, 12, textColor, doOutline);
-                        }
-                    }
-                }
-
-                std::string text = GetWrappedText(mon.attackEffect1, fontReg.fontVar, 14, 320.0f);
-                CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, attackNamePos1.y + 24.0f }, 14, textColor, doOutline);
-            }
-
-            sf::Text dummyAttackEffect1Text(fontReg.fontVar, GetWrappedText(mon.attackEffect1, fontReg.fontVar, 14, 320.0f), 14);
-            f32 attackInfoPosY = !mon.attackEffect1.empty() ? dummyAttackEffect1Text.getLocalBounds().size.y : 0.0f;
-            sf::Vector2f attackNamePos2 = { cardPos.x + 118.0f, attackNamePos1.y + 50.0f + attackInfoPosY };
-
-            if (mon.attackCount > 1 && !mon.hasAbility)
-            {
-                if (mon.attackCost2 == 5)
-                {
-                    attackNamePos2.x += 24.0f;
-                }
-
-                CreateText(texts, fontSemiBold.fontVar, mon.attackName2, { attackNamePos2 }, 18, textColor, doOutline);
-
-                if (mon.attackDamage2 > 0)
-                {
-                    f32 xMod = mon.attackDamage2 >= 100 ? 312.0f : 322.0f;
-
-                    CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage2), { cardPos.x + xMod, attackNamePos2.y }, 18, textColor, doOutline);
-
-                    if (!mon.damageAffixes[mon.attackDamageAffix2].empty())
-                    {
-                        if (mon.damageAffixes[mon.attackDamageAffix2] == "-")
-                        {
-                            xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
-                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix2], { cardPos.x + xMod , attackNamePos2.y }, 16, textColor, doOutline);
-                        }
-                        else
-                        {
-                            xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
-                            CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix2], { cardPos.x + xMod , attackNamePos2.y + 5.0f }, 12, textColor, doOutline);
-                        }
-                    }
-                }
-
-                std::string text = GetWrappedText(mon.attackEffect2, fontReg.fontVar, 14, 320.0f);
-                CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, attackNamePos2.y + 24.0f }, 14, textColor, doOutline);
-            }
-
-            // Icons/Sprites
-            if (mon.isEX && !mon.name.empty())
-            {
-                u8 index = mon.currentRarity >= ART_RARE ? 1 : 0;
-
-                sf::Sprite sprite(*exIcons[index]);
-
-                sf::Text dummyNameText(fontSemiBold.fontVar, mon.name, 28);
-                
-                f32 x = cardPos.x + 63.0f + dummyNameText.getGlobalBounds().size.length();
-                f32 y = index ? cardPos.y + 20.0f : cardPos.y + 22.0f; // index 1 EX sprite is slightly bigger
-                sprite.setPosition({ x, y });
-
-                sprites.push_back(sprite);
-            }
-
-            if (mon.currentStage != BASIC && mon.currentPreEvo > 0)
-            {
-                sf::Texture* tempTexture = new sf::Texture();
-                if (tempTexture->loadFromFile("./Custom/Evolves_From/" + customEvolvesFromFileNames[mon.currentPreEvo]))
-                {
-                    delete preEvoTexture;
-                    preEvoTexture = tempTexture;
-
-                    delete preEvoSprite;
-                    preEvoSprite = new sf::Sprite(*preEvoTexture);
-                    preEvoSprite->setOrigin({ preEvoTexture->getSize().x / 2.0f, preEvoTexture->getSize().y / 2.0f });
-                    preEvoSprite->setPosition({ 20.0f + 36.0f, 40.0f + 58.0f });
-
-                    sprites.push_back(*preEvoSprite);
                 }
                 else
                 {
                     delete tempTexture;
                 }
-            }
 
-            if (mon.hasAbility)
-            {
-                sf::Sprite sprite(*abilityPlate);
-                sprite.setPosition({ cardPos.x + 26.0f, cardPos.y + 275.0f });
-
-                sprites.push_back(sprite);
-            }
-
-            if (mon.attackCount > 0)
-            {
-                for (u8 i = 0; i < mon.attackCost1; i++)
+                if (mon.currentRarity == CROWN_RARE)
                 {
-                    sf::Sprite sprite(*attackTypeIcons[mon.attack1CostType[i]]);
-                    sprite.setPosition({ cardPos.x + 24.0f + (i * 22.0f), attackNamePos1.y + 2.0f });
+                    delete backPlateSprite;
 
-                    sprites.push_back(sprite);
+                    backPlateSprite = new sf::Sprite(*crBackplates[mon.currentCRBackplate]);
+                    backPlateSprite->setPosition({ 20.0f, 40.0f });
                 }
             }
 
-            if (mon.attackCount > 1 && !mon.hasAbility)
+            // Illustration
+            if (mon.currentIllus > 0 && mon != tempMon)
             {
-                for (u8 i = 0; i < mon.attackCost2; i++)
+                if (sf::Texture* tempTexture = new sf::Texture("./Custom/Illustrations/" + customIllustrationFileNames[mon.currentIllus]))
                 {
-                    sf::Sprite sprite(*attackTypeIcons[mon.attack2CostType[i]]);
-                    sprite.setPosition({ cardPos.x + 24.0f + (i * 22.0f), attackNamePos2.y + 2.0f });
+                    delete illusTexture;
+                    illusTexture = tempTexture;
+
+                    delete illusSprite;
+                    illusSprite = new sf::Sprite(*illusTexture);
+
+                    if (mon.currentRarity < ART_RARE)
+                    {
+                        illusSprite->setPosition({ 20.0f + 30.0f, 88.0f });
+                    }
+                    else
+                    {
+                        illusSprite->setPosition({ 20.0f + 14.0f, 50.0f });
+                    }
+                }
+            }
+            else if (mon.currentIllus == 0)
+            {
+                delete illusTexture;
+                illusTexture = nullptr;
+
+                delete illusSprite;
+                illusSprite = nullptr;
+            }
+
+            // Flair
+            if (!mon.currentFlair)
+            {
+                postFlairSprites.clear();
+            }
+
+            if (mon.currentFlair > 0 && mon != tempMon)
+            {
+                postFlairSprites.clear();
+
+                if (sf::Texture* tempTexture = new sf::Texture("./Custom/Flairs/" + customFlairFileNames[mon.currentFlair]))
+                {
+                    delete flairTexture;
+                    flairTexture = tempTexture;
+
+                    delete flairSprite;
+                    flairSprite = new sf::Sprite(*flairTexture);
+
+                    flairSprite->setPosition({ 20.0f, 40.0f });
+                }
+
+                sf::Sprite* typeSprite = new sf::Sprite(*attackTypeIcons[mon.currentType]);
+                typeSprite->setPosition({ 20.0f + 321.0f, 55.0f });
+                typeSprite->setScale({ 1.27f, 1.27f });
+                postFlairSprites.push_back(typeSprite);
+
+                if (mon.currentRarity != CROWN_RARE)
+                {
+                    if (mon.currentStage == BASIC)
+                    {
+                        basicPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(basicPlateSprite);
+                    }
+
+                    if (mon.currentStage == STAGE_1)
+                    {
+                        stage1PlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(stage1PlateSprite);
+                    }
+
+                    if (mon.currentStage == STAGE_2)
+                    {
+                        stage2PlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(stage2PlateSprite);
+                    }
+
+                    weaknessPlateSprite->setPosition({ 20.0f + 26.0f, 479.0f });
+                    postFlairSprites.push_back(weaknessPlateSprite);
+                }
+                else if (mon.currentRarity == CROWN_RARE)
+                {
+                    if (mon.currentStage == BASIC)
+                    {
+                        basicCRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(basicCRPlateSprite);
+                    }
+
+                    if (mon.currentStage == STAGE_1)
+                    {
+                        stage1CRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(stage1CRPlateSprite);
+                    }
+
+                    if (mon.currentStage == STAGE_2)
+                    {
+                        stage2CRPlateSprite->setPosition({ 20.0f + 9.0f, 60.0f });
+                        postFlairSprites.push_back(stage2CRPlateSprite);
+                    }
+
+                    weaknessCRPlateSprite->setPosition({ 20.0f + 26.0f, 479.0f });
+                    postFlairSprites.push_back(weaknessCRPlateSprite);
+                }
+
+                if (mon.isEX)
+                {
+                    exRuleSprite->setPosition({ 20.0f + 119.0f, 504.0f });
+                    postFlairSprites.push_back(exRuleSprite);
+                }
+            }
+            else if (mon.currentFlair == 0)
+            {
+                delete flairSprite;
+                flairSprite = nullptr;
+
+                delete flairTexture;
+                flairTexture = nullptr;
+            }
+
+            tempMon = mon;
+            texts.clear();
+            sprites.clear();
+
+            // Card Visual Structure
+            if (cardTemplate)
+            {
+                // Texts
+                sf::Vector2f cardSize = { cardTemplate->getGlobalBounds().size.x, cardTemplate->getLocalBounds().size.y };
+                sf::Vector2f cardPos = cardTemplate->getPosition();
+                sf::Vector2f healthValuePos = { cardPos.x + 305.0f, cardPos.y + 13.0f };
+
+                sf::Color textColor = mon.currentType == DARKNESS && mon.currentRarity < ART_RARE ? sf::Color::White : sf::Color::Black;
+                bool doOutline = mon.currentRarity >= ART_RARE ? true : false;
+
+                CreateText(texts, fontSemiBold.fontVar, mon.name, { cardPos.x + 66.0f, cardPos.y + 13.0f }, 26, textColor, doOutline);
+
+                if (mon.health > 0 && mon.health < 100)
+                {
+                    healthValuePos.x -= 14.0f;
+                }
+                else if (mon.health >= 100)
+                {
+                    healthValuePos.x -= 28.0f;
+                }
+
+                if (mon.health > 0)
+                {
+                    CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.health), { healthValuePos }, 26, textColor, doOutline);
+                    CreateText(texts, fontMTBoldCond.fontVar, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, textColor, doOutline);
+                }
+
+                if (mon.currentStage != BASIC)
+                {
+                    CreateText(texts, fontReg.fontVar, "Evolves from " + mon.evolvesFrom, { cardPos.x + 64.0f, cardPos.y + 47.0f }, 8);
+                }
+
+                if (!mon.isEX && mon.currentRarity <= RARE)
+                {
+                    CreateText(texts, fontReg.fontVar, mon.basicInfo, { cardPos.x + (cardSize.x / 2.0f), cardPos.y + 249.0f }, 8, sf::Color::Black, false, sf::Color::White, true);
+                }
+
+                if (mon.currentWeakness != NONE)
+                {
+                    CreateText(texts, fontSemiBold.fontVar, "+20", { cardPos.x + 120.0f, cardPos.y + 438.0f }, 16);
+                }
+
+                if (!mon.illustrator.empty())
+                {
+                    CreateText(texts, fontItalic.fontVar, "Illus. " + mon.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, textColor, doOutline);
+                }
+
+                std::vector<std::string> flavorLines = GetRightAlignedWrappedLines(mon.flavorText, fontReg.fontVar, 8, 155.0f);
+                CreateRightAlignedWrappedText(texts, flavorLines, fontReg.fontVar, 8, cardPos.x + 340.0f, cardPos.y + 460.0f, 11.0f, textColor, doOutline);
+
+                if (mon.hasAbility)
+                {
+                    CreateText(texts, fontBold.fontVar, mon.abilityName, { cardPos.x + 112.0f, cardPos.y + 272.0f }, 18, sf::Color{ 164, 12, 19 }, mon.currentRarity > DOUBLE_RARE ? true : false);
+
+                    std::string text = GetWrappedText(mon.abilityEffect, fontReg.fontVar, 14, 320.0f);
+                    CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, cardPos.y + 293.0f }, 14, textColor, doOutline);
+                }
+
+                sf::Text dummyAbilityEffectText(fontReg.fontVar, GetWrappedText(mon.abilityEffect, fontReg.fontVar, 14, 320.0f), 14);
+                sf::Vector2f attackNamePos1 = { cardPos.x + 118.0f, mon.hasAbility ? cardPos.y + dummyAbilityEffectText.getLocalBounds().size.y : cardPos.y };
+
+                if (mon.attackCount > 0)
+                {
+                    if (mon.hasAbility)
+                    {
+                        attackNamePos1.y += 328.0f;
+                    }
+                    else if (mon.attackCount == 2)
+                    {
+                        attackNamePos1.y += 292.0f;
+                    }
+                    else
+                    {
+                        if (!mon.attackEffect1.empty())
+                        {
+                            attackNamePos1.y += 314.0f;
+                        }
+                        else
+                        {
+                            attackNamePos1.y += 330.0f;
+                        }
+                    }
+
+                    if (mon.attackCost1 == 5)
+                    {
+                        attackNamePos1.x += 24.0f;
+                    }
+
+                    CreateText(texts, fontSemiBold.fontVar, mon.attackName1, { attackNamePos1 }, 18, textColor, doOutline);
+
+                    if (mon.attackDamage1 > 0)
+                    {
+                        f32 xMod = mon.attackDamage1 >= 100 ? 312.0f : 322.0f;
+
+                        CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage1), { cardPos.x + xMod, attackNamePos1.y }, 18, textColor, doOutline);
+
+                        if (mon.attackDamageAffix1 > 0)
+                        {
+                            if (mon.damageAffixes[mon.attackDamageAffix1] == "-")
+                            {
+                                xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
+                                CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix1], { cardPos.x + xMod , attackNamePos1.y }, 16, textColor, doOutline);
+                            }
+                            else
+                            {
+                                xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
+                                CreateText(texts, fontSemiBold.fontVar, mon.attackDamageAffix1 == 1 ? "×" : "+", { cardPos.x + xMod , attackNamePos1.y + 5.0f }, 12, textColor, doOutline);
+                            }
+                        }
+                    }
+
+                    std::string text = GetWrappedText(mon.attackEffect1, fontReg.fontVar, 14, 320.0f);
+                    CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, attackNamePos1.y + 24.0f }, 14, textColor, doOutline);
+                }
+
+                sf::Text dummyAttackEffect1Text(fontReg.fontVar, GetWrappedText(mon.attackEffect1, fontReg.fontVar, 14, 320.0f), 14);
+                f32 attackInfoPosY = !mon.attackEffect1.empty() ? dummyAttackEffect1Text.getLocalBounds().size.y : 0.0f;
+                sf::Vector2f attackNamePos2 = { cardPos.x + 118.0f, attackNamePos1.y + 50.0f + attackInfoPosY };
+
+                if (mon.attackCount > 1 && !mon.hasAbility)
+                {
+                    if (mon.attackCost2 == 5)
+                    {
+                        attackNamePos2.x += 24.0f;
+                    }
+
+                    CreateText(texts, fontSemiBold.fontVar, mon.attackName2, { attackNamePos2 }, 18, textColor, doOutline);
+
+                    if (mon.attackDamage2 > 0)
+                    {
+                        f32 xMod = mon.attackDamage2 >= 100 ? 312.0f : 322.0f;
+
+                        CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.attackDamage2), { cardPos.x + xMod, attackNamePos2.y }, 18, textColor, doOutline);
+
+                        if (mon.attackDamageAffix2 > 0)
+                        {
+                            if (mon.damageAffixes[mon.attackDamageAffix2] == "-")
+                            {
+                                xMod += mon.attackDamage2 >= 100 ? 31.0f : 21.0f;
+                                CreateText(texts, fontSemiBold.fontVar, mon.damageAffixes[mon.attackDamageAffix2], { cardPos.x + xMod , attackNamePos2.y }, 16, textColor, doOutline);
+                            }
+                            else
+                            {
+                                xMod += mon.attackDamage2 >= 100 ? 30.0f : 20.0f;
+                                CreateText(texts, fontSemiBold.fontVar, mon.attackDamageAffix2 == 1 ? "×" : "+", {cardPos.x + xMod , attackNamePos2.y + 5.0f}, 12, textColor, doOutline);
+                            }
+                        }
+                    }
+
+                    std::string text = GetWrappedText(mon.attackEffect2, fontReg.fontVar, 14, 320.0f);
+                    CreateText(texts, fontReg.fontVar, text, { cardPos.x + 26.0f, attackNamePos2.y + 24.0f }, 14, textColor, doOutline);
+                }
+
+                // Icons/Sprites
+                if (mon.isEX && !mon.name.empty())
+                {
+                    u8 index = mon.currentRarity >= ART_RARE ? 1 : 0;
+
+                    sf::Sprite sprite(*exIcons[index]);
+
+                    sf::Text dummyNameText(fontSemiBold.fontVar, mon.name, 28);
+
+                    f32 x = cardPos.x + 63.0f + dummyNameText.getGlobalBounds().size.length();
+                    f32 y = index ? cardPos.y + 20.0f : cardPos.y + 22.0f; // index 1 EX sprite is slightly bigger
+                    sprite.setPosition({ x, y });
 
                     sprites.push_back(sprite);
                 }
-            }
 
-            if (mon.currentWeakness != NONE)
-            {
-                sf::Sprite sprite(*typeIcons[mon.currentWeakness]);
-                sprite.setPosition({ cardPos.x + 104.0f, cardPos.y + 441.0f });
-
-                sprites.push_back(sprite);
-            }
-
-            for (u8 i = 0; i < mon.retreatCost; i++)
-            {
-                sf::Sprite sprite(*typeIcons[COLORLESS]);
-                sprite.setPosition({ cardPos.x + 250.0f + (i * 15.0f), cardPos.y + 441.0f });
-
-                sprites.push_back(sprite);
-            }
-
-            sf::Vector2f rarityPos = { cardPos.x + 27.0f, cardPos.y + 470.0f };
-            if (mon.currentRarity <= DOUBLE_RARE)
-            {
-                for (u8 i = 0; i < mon.currentRarity; i++)
+                if (mon.currentStage != BASIC && mon.currentPreEvo > 0)
                 {
-                    sf::Sprite sprite(*rarityIcons[0]);
-                    sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+                    sf::Texture* tempTexture = new sf::Texture();
+                    if (tempTexture->loadFromFile("./Custom/Evolves_From/" + customEvolvesFromFileNames[mon.currentPreEvo]))
+                    {
+                        delete preEvoTexture;
+                        preEvoTexture = tempTexture;
+
+                        delete preEvoSprite;
+                        preEvoSprite = new sf::Sprite(*preEvoTexture);
+                        preEvoSprite->setOrigin({ preEvoTexture->getSize().x / 2.0f, preEvoTexture->getSize().y / 2.0f });
+                        preEvoSprite->setPosition({ 20.0f + 36.0f, 40.0f + 58.0f });
+
+                        sprites.push_back(*preEvoSprite);
+                    }
+                    else
+                    {
+                        delete tempTexture;
+                    }
+                }
+
+                if (mon.hasAbility)
+                {
+                    sf::Sprite sprite(*abilityPlate);
+                    sprite.setPosition({ cardPos.x + 26.0f, cardPos.y + 275.0f });
 
                     sprites.push_back(sprite);
                 }
-            }
-            else if (mon.currentRarity >= ART_RARE && mon.currentRarity <= IMMERSIVE_RARE)
-            {
-                u8 count = mon.currentRarity > SUPER_RARE ? mon.currentRarity - 5 : mon.currentRarity - 4;
 
-                for (u8 i = 0; i < count; i++)
+                if (mon.attackCount > 0)
                 {
-                    sf::Sprite sprite(*rarityIcons[1]);
-                    sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+                    for (u8 i = 0; i < mon.attackCost1; i++)
+                    {
+                        sf::Sprite sprite(*attackTypeIcons[mon.attack1CostType[i]]);
+                        sprite.setPosition({ cardPos.x + 24.0f + (i * 22.0f), attackNamePos1.y + 2.0f });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+
+                if (mon.attackCount > 1 && !mon.hasAbility)
+                {
+                    for (u8 i = 0; i < mon.attackCost2; i++)
+                    {
+                        sf::Sprite sprite(*attackTypeIcons[mon.attack2CostType[i]]);
+                        sprite.setPosition({ cardPos.x + 24.0f + (i * 22.0f), attackNamePos2.y + 2.0f });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+
+                if (mon.currentWeakness != NONE)
+                {
+                    sf::Sprite sprite(*typeIcons[mon.currentWeakness]);
+                    sprite.setPosition({ cardPos.x + 104.0f, cardPos.y + 441.0f });
 
                     sprites.push_back(sprite);
                 }
-            }
-            else if (mon.currentRarity == CROWN_RARE)
-            {
-                sf::Sprite sprite(*rarityIcons[2]);
-                sprite.setPosition({ rarityPos });
 
-                sprites.push_back(sprite);
-            }
-            else if (mon.currentRarity >= SHINY_RARE)
-            {
-                for (u8 i = 0; i < mon.currentRarity - 9; i++)
+                for (u8 i = 0; i < mon.retreatCost; i++)
                 {
-                    sf::Sprite sprite(*rarityIcons[3]);
-                    sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+                    sf::Sprite sprite(*typeIcons[COLORLESS]);
+                    sprite.setPosition({ cardPos.x + 250.0f + (i * 15.0f), cardPos.y + 441.0f });
 
                     sprites.push_back(sprite);
+                }
+
+                sf::Vector2f rarityPos = { cardPos.x + 27.0f, cardPos.y + 470.0f };
+                if (mon.currentRarity <= DOUBLE_RARE)
+                {
+                    for (u8 i = 0; i < mon.currentRarity; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[0]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+                else if (mon.currentRarity >= ART_RARE && mon.currentRarity <= IMMERSIVE_RARE)
+                {
+                    u8 count = mon.currentRarity > SUPER_RARE ? mon.currentRarity - 5 : mon.currentRarity - 4;
+
+                    for (u8 i = 0; i < count; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[1]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+                else if (mon.currentRarity == CROWN_RARE)
+                {
+                    sf::Sprite sprite(*rarityIcons[2]);
+                    sprite.setPosition({ rarityPos });
+
+                    sprites.push_back(sprite);
+                }
+                else if (mon.currentRarity >= SHINY_RARE)
+                {
+                    for (u8 i = 0; i < mon.currentRarity - 9; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[3]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+            }
+        }
+
+        if (majorCardTypesIndex == TRAINER)
+        {
+            // Draw Illustration
+            if (trainer.currentIllus > 0 && trainer != tempTrainer)
+            {
+                if (sf::Texture* tempTexture = new sf::Texture("./Custom/Illustrations/" + customIllustrationFileNames[trainer.currentIllus]))
+                {
+                    delete illusTexture;
+                    illusTexture = tempTexture;
+
+                    delete illusSprite;
+                    illusSprite = new sf::Sprite(*illusTexture);
+
+                    if (trainer.currentRarity < ART_RARE)
+                    {
+                        illusSprite->setPosition({ 20.0f + 30.0f, 88.0f });
+                    }
+                    else
+                    {
+                        illusSprite->setPosition({ 20.0f + 14.0f, 50.0f });
+                    }
+                }
+            }
+            else if (trainer.currentIllus == 0)
+            {
+                delete illusTexture;
+                illusTexture = nullptr;
+
+                delete illusSprite;
+                illusSprite = nullptr;
+            }
+
+            // Draw Template
+            if (trainer != tempTrainer)
+            {
+                delete cardTexture;
+                cardTexture = nullptr;
+
+                delete cardTemplate;
+                cardTemplate = nullptr;
+
+                delete borderSprite;
+                borderSprite = nullptr;
+
+                sf::Texture* tempTexture = LoadTemplate(hMpq, trainer);
+                if (tempTexture)
+                {
+                    cardTexture = tempTexture;
+                    cardTemplate = new sf::Sprite(*cardTexture);
+
+                    cardTemplate->setPosition({ 20.0f, 40.0f });
+                }
+                else
+                {
+                    delete tempTexture;
+                }
+
+                if (trainer.currentRarity == CROWN_RARE)
+                {
+                    delete backPlateSprite;
+
+                    backPlateSprite = new sf::Sprite(*crBackplates[trainer.currentCRBackplate]);
+                    backPlateSprite->setPosition({ 20.0f, 40.0f });
+                }
+            }
+            // Draw Flair
+
+            tempTrainer = trainer;
+            texts.clear();
+            sprites.clear();
+            // Draw Icons
+
+            // Draw Text
+            if (cardTemplate)
+            {
+                // Texts
+                sf::Vector2f cardSize = { cardTemplate->getGlobalBounds().size.x, cardTemplate->getLocalBounds().size.y };
+                sf::Vector2f cardPos = cardTemplate->getPosition();
+                //sf::Vector2f healthValuePos = { cardPos.x + 305.0f, cardPos.y + 13.0f };
+
+                sf::Color textColor = trainer.currentType == DARKNESS && trainer.currentRarity < ART_RARE ? sf::Color::White : sf::Color::Black;
+                bool doOutline = trainer.currentRarity >= ART_RARE ? true : false;
+
+                CreateText(texts, fontSemiBold.fontVar, trainer.name, { cardPos.x + 20.0f, cardPos.y + 35.0f }, 26, textColor, doOutline);
+
+                if (trainer.health > 0 && trainer.health < 100)
+                {
+                    //healthValuePos.x -= 14.0f;
+                }
+                else if (trainer.health >= 100)
+                {
+                    //healthValuePos.x -= 28.0f;
+                }
+
+                if (mon.health > 0)
+                {
+                    //CreateText(texts, fontSemiBold.fontVar, std::to_string(mon.health), { healthValuePos }, 26, textColor, doOutline);
+                    //CreateText(texts, fontMTBoldCond.fontVar, "HP", { healthValuePos.x - 14.0f, healthValuePos.y + 13.0f }, 12, textColor, doOutline);
+                }
+
+                if (!trainer.illustrator.empty())
+                {
+                    CreateText(texts, fontItalic.fontVar, "Illus. " + trainer.illustrator, { cardPos.x + 27.0f, cardPos.y + 458.0f }, 9, textColor, doOutline);
+                }
+
+                //std::vector<std::string> flavorLines = GetRightAlignedWrappedLines(mon.flavorText, fontReg.fontVar, 8, 155.0f);
+                //CreateRightAlignedWrappedText(texts, flavorLines, fontReg.fontVar, 8, cardPos.x + 340.0f, cardPos.y + 460.0f, 11.0f, textColor, doOutline);
+
+                // Icons/Sprites
+                if (trainer.currentType > 0)
+                {
+                    sf::Sprite trainerType(*trainerTypes[trainer.currentType - 1]);
+                    trainerType.setPosition({ cardPos.x + 17.0f, cardPos.y + 17.0f });
+
+                    sf::Sprite trainerRule(*trainerRules[trainer.currentType - 1]);
+                    trainerRule.setPosition({ cardPos.x + 115.0f, cardPos.y + 443.0f });
+
+                    u32 fontSize = trainer.currentType == STADIUM ? 9 : 10;
+                    std::string ruleLines = GetWrappedText(trainer.ruleText[trainer.currentType], fontReg.fontVar, fontSize, 220.0f);
+                    CreateText(texts, fontReg.fontVar, ruleLines, { cardPos.x + 124.0f, cardPos.y + 449.0f }, fontSize);
+
+                    sprites.push_back(trainerType);
+                    sprites.push_back(trainerRule);
+                }
+
+                //if (trainer.currentType > 0)
+                //{
+                //    sf::Sprite trainerRule(*trainerRules[trainer.currentType - 1]);
+                //    trainerRule.setPosition({ cardPos.x + 115.0f, cardPos.y + 443.0f });
+
+                //    std::vector<std::string> flavorLines = GetRightAlignedWrappedLines(trainer.ruleText[trainer.currentType], fontReg.fontVar, 8, 155.0f);
+                //    CreateText(texts, fontReg.fontVar, "", { cardPos.x + 17.0f, cardPos.x + 17.0f }, 8);
+
+                //    sprites.push_back(trainerRule);
+                //}
+
+                sf::Vector2f rarityPos = { cardPos.x + 27.0f, cardPos.y + 470.0f };
+                if (trainer.currentRarity <= DOUBLE_RARE)
+                {
+                    for (u8 i = 0; i < trainer.currentRarity; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[0]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+                else if (trainer.currentRarity >= ART_RARE && trainer.currentRarity <= IMMERSIVE_RARE)
+                {
+                    u8 count = trainer.currentRarity > SUPER_RARE ? trainer.currentRarity - 5 : trainer.currentRarity - 4;
+
+                    for (u8 i = 0; i < count; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[1]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
+                }
+                else if (trainer.currentRarity == CROWN_RARE)
+                {
+                    sf::Sprite sprite(*rarityIcons[2]);
+                    sprite.setPosition({ rarityPos });
+
+                    sprites.push_back(sprite);
+                }
+                else if (trainer.currentRarity >= SHINY_RARE)
+                {
+                    for (u8 i = 0; i < trainer.currentRarity - 9; i++)
+                    {
+                        sf::Sprite sprite(*rarityIcons[3]);
+                        sprite.setPosition({ rarityPos.x + (i * 15.0f), rarityPos.y });
+
+                        sprites.push_back(sprite);
+                    }
                 }
             }
         }
@@ -1365,44 +1785,104 @@ int main()
 
         if (saveScreenshotNow)
         {
-            SaveCard(renderTexture, illusSprite, cardTemplate, borderSprite, flairSprite, sprites, texts, mon);
+            if (majorCardTypesIndex == POKEMON)
+            {
+                SaveCard(renderTexture, backPlateSprite, illusSprite, cardTemplate, borderSprite, flairSprite, sprites, texts, mon);
+            }
+
+            if (majorCardTypesIndex == TRAINER)
+            {
+                SaveCard(renderTexture, backPlateSprite, illusSprite, cardTemplate, borderSprite, flairSprite, sprites, texts, trainer);
+            }
+
             saveScreenshotNow = false;
         }
 
         window.draw(*bgSprite);
 
-        if (cardTemplate)
+        if (majorCardTypesIndex == POKEMON)
         {
-            if (illusSprite)
+            if (cardTemplate)
             {
-                window.draw(*illusSprite);
+                if (mon.currentRarity == CROWN_RARE)
+                {
+                    window.draw(*backPlateSprite);
+                }
+
+                if (illusSprite)
+                {
+                    window.draw(*illusSprite);
+                }
+
+                window.draw(*cardTemplate);
+
+                if (borderSprite)
+                {
+                    window.draw(*borderSprite);
+                }
+
+                if (flairSprite)
+                {
+                    window.draw(*flairSprite);
+                }
+
+                for (auto& sprite : postFlairSprites)
+                {
+                    window.draw(*sprite);
+                }
+
+                for (auto& sprite : sprites)
+                {
+                    window.draw(sprite);
+                }
+
+                for (auto& text : texts)
+                {
+                    window.draw(text);
+                }
             }
+        }
 
-            window.draw(*cardTemplate);
-
-            if (borderSprite)
+        if (majorCardTypesIndex == TRAINER)
+        {
+            if (cardTemplate)
             {
-                window.draw(*borderSprite);
-            }
+                if (trainer.currentRarity == CROWN_RARE)
+                {
+                    window.draw(*backPlateSprite);
+                }
 
-            if (flairSprite)
-            {
-                window.draw(*flairSprite);
-            }
+                if (illusSprite)
+                {
+                    window.draw(*illusSprite);
+                }
 
-            for (auto& sprite : postFlairSprites)
-            {
-                window.draw(*sprite);
-            }
+                window.draw(*cardTemplate);
 
-            for (auto& sprite : sprites)
-            {
-                window.draw(sprite);
-            }
+                if (borderSprite)
+                {
+                    window.draw(*borderSprite);
+                }
 
-            for (auto& text : texts)
-            {
-                window.draw(text);
+                if (flairSprite)
+                {
+                    window.draw(*flairSprite);
+                }
+
+                for (auto& sprite : postFlairSprites)
+                {
+                    window.draw(*sprite);
+                }
+
+                for (auto& sprite : sprites)
+                {
+                    window.draw(sprite);
+                }
+
+                for (auto& text : texts)
+                {
+                    window.draw(text);
+                }
             }
         }
 
