@@ -12,7 +12,6 @@ There is a download for a pre compiled version of this program so that you can s
 * [How-To Use](#How---To-Use)
 * [Card Biology](#Card-Biology)
 * [To-Do List](#To---Do-List)
-* [Socials](#Socials)
 
 ## What is this?
 This is the Enigma's Card Lab application. This tool is used to create custom cards for the mobile game Pokemon TCG Pocket. The goal of this tool is to provide users a quick and easy way to add and combine their own custom art for borders, illustrations, flairs, and etcetera to create new and unqiue cards that resemble and could pass for legitimate cards. The intent isn't to fool anyone, but to provide realistic concepts for everyone to theorycraft, enjoy, and share. 
@@ -47,8 +46,3 @@ This is the Enigma's Card Lab application. This tool is used to create custom ca
 - Add Trainers
 - Add a way to add element symbols to text
 - Rewrite and organize code instead of keeping it all in one file
-
-## Socials
-- [X/SoapyEnigma](https://x.com/SoapyEnigma)
-- [Card Lab Discord](https://discord.gg/kFZ7WjSZQT)
-- [Buy Me A Coffe](https://buymeacoffee.com/soapyenigma)
